@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="player_image" />
+    <string name="decrease" />
+    <string name="increase" />
+    <string-array name="image_names" />
+</resources>

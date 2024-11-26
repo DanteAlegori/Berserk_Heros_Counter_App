@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<strings xmlns:android="http://schemas.android.com/apk/res/android">
+    <resources>
+        <string name="app_name">My Application</string>
+        <string name="player_image">Player Image</string>
+        <string name="decrease">Decrease</string>
+        <string name="increase">Increase</string>
+    </resources>
+
+</strings>
