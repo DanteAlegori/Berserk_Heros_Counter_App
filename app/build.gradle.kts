@@ -51,6 +51,11 @@ dependencies {
     implementation("androidx.compose.animation:animation-core:1.5.1") // Или последнюю версию, согласованную с BOM
     implementation("io.coil-kt:coil-compose:2.4.0") // Одна строка
     implementation("androidx.navigation:navigation-compose:2.7.5") // Или последнюю версию
+    implementation("androidx.compose.ui:ui:1.5.1")
+    implementation("androidx.compose.material:material:1.5.1")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.1")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.5.1")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

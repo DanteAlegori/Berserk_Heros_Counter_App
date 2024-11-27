@@ -25,7 +25,7 @@ class SoundManager(private val context: Context) {
 
         hsSoundId = soundPool!!.load(context, R.raw.stokovoexp, 1) //Priority 1 for all sounds
         hilSoundId = soundPool!!.load(context, R.raw.xp, 1)
-        swordSoundId = soundPool!!.load(context, R.raw.yron, 1)
+        swordSoundId = soundPool!!.load(context, R.raw.hs, 1)
     }
 
     fun playSound(type: SoundType) {
