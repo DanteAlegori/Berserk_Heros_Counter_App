@@ -22,6 +22,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,15 +39,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
@@ -109,8 +117,6 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
 
 
     Scaffold(modifier = Modifier.fillMaxSize(), contentColor = Color.White) { innerPadding ->
-
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -125,14 +131,14 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp), // Отступ от краев экрана
-                verticalArrangement = Arrangement.SpaceBetween, // Равномерно распределяем пространство между картами
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .weight(1f) // Занимаем половину доступного пространства
+                        .fillMaxWidth() // Удалено 0.9f, теперь заполняет всю ширину
+                        .weight(1f)
                         .padding(8.dp)
                         .border(
                             width = 2.dp,
@@ -159,15 +165,15 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                         backgroundImageIndex = selectedElementPlayer2,
                         gradientColors = gradientColors,
                         onImageIndexChange = { selectedElementPlayer2 = it },
-                        onShowImagePickerDialog = { showImagePickerDialog = 1 }
+                        onShowImagePickerDialog = { showImagePickerDialog = 1 },
 
                     )
                 }
 
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .weight(1f) // Занимаем половину доступного пространства
+                        .fillMaxWidth() // Удалено 0.9f, теперь заполняет всю ширину
+                        .weight(1f)
                         .padding(8.dp)
                         .border(
                             width = 2.dp,
@@ -236,7 +242,7 @@ val interactionSource = remember { MutableInteractionSource() }
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
-            .size(50.dp * scale), // Размер теперь зависит от масштаба
+            .size(65.dp * scale), // Размер теперь зависит от масштаба
         interactionSource = interactionSource,
         colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor)
     ) {
@@ -250,7 +256,8 @@ val interactionSource = remember { MutableInteractionSource() }
 
 
 @Composable
-fun ResetButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun ResetButton(modifier: Modifier = Modifier, onClick: () -> Unit, context: Context) { // Добавили context
+    val soundManager = remember { SoundManager(context) } // Создаем SoundManager здесь
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonColor = if (isPressed) Color.Red.copy(alpha = 0.8f) else Color.Red
@@ -260,11 +267,14 @@ fun ResetButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     )
 
     IconButton(
-        onClick = onClick,
+        onClick = {
+            onClick()
+            soundManager.playSound(SoundManager.SoundType.RESET)
+        },
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
-            .size(50.dp * scale), // Размер теперь зависит от масштаба
+            .size(70.dp * scale),
         interactionSource = interactionSource,
         colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor)
     ) {
@@ -275,6 +285,8 @@ fun ResetButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
         )
     }
 }
+
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -302,14 +314,7 @@ fun PlayerLifeCounterCard(
     }
     val backgroundColor = remember(backgroundImageIndex) { backgroundColors[backgroundImageIndex % backgroundColors.size] }
     val imageResourceId = remember(backgroundImageIndex) { imageResourceIds[backgroundImageIndex % imageResourceIds.size] }
-
-
     val backgroundImageId = backgroundImageIds[backgroundImageIndex % backgroundImageIds.size]
-    var showDialog by remember { mutableStateOf(false) }
-
-
-    // Function to display or dismiss the ImagePickerDialog
-
 
 
     AnimatedVisibility(
@@ -325,7 +330,7 @@ fun PlayerLifeCounterCard(
                 .padding(8.dp)
                 .then(if (rotate) Modifier.rotate(180f) else Modifier)
                 .graphicsLayer {
-                    scaleX = 1f // Убрал анимацию масштаба, т.к. она здесь избыточна
+                    scaleX = 1f
                     scaleY = 1f
                 },
             shape = RoundedCornerShape(12.dp),
@@ -351,7 +356,7 @@ fun PlayerLifeCounterCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.padding(13.dp)) {
-                        ResetButton(onClick = {
+                        ResetButton(context = context, onClick = {
                             lifeTotal.value = 25
                             soundManager.playSound(SoundManager.SoundType.RESET)
                         })
@@ -359,8 +364,8 @@ fun PlayerLifeCounterCard(
                     Column(modifier = Modifier.padding(5.dp)) {
                         ElementSelectionButton(
                             modifier = Modifier.padding(7.dp),
-                            onClick = onShowImagePickerDialog, // Вызываем функцию из LifeCounterApp
-                            onImageIndexChange = onImageIndexChange,// Передаем функцию сюда
+                            onClick = onShowImagePickerDialog,
+                            onImageIndexChange = onImageIndexChange,
                             selectedImageIndex = backgroundImageIndex
                         )
                     }
@@ -371,22 +376,21 @@ fun PlayerLifeCounterCard(
                     maxLife = maxLife,
                     imageResourceId = imageResourceId,
                     backgroundColor = backgroundColor,
-                    backgroundImageIndex = backgroundImageIndex, // Передаем backgroundImageIndex
+                    backgroundImageIndex = backgroundImageIndex,
+                    context = context, // Передаем контекст сюда,
                     onLifeChange = { newValue, increased ->
-                        val oldLife = lifeTotal.value
-                        onLifeChange(newValue, increased)
-                        val soundType = when {
-                            newValue > oldLife -> SoundManager.SoundType.INCREASE
-                            increased -> SoundManager.SoundType.DECREASE
-                            else -> SoundManager.SoundType.RESET
-                        }
-                        soundManager.playSound(soundType)
-                    },
+                        lifeTotal.value = newValue
+                        soundManager.playSound(when {
+                            increased -> SoundManager.SoundType.DECREASE // Звук урона должен воспроизводиться, когда increased == false
+                            else -> SoundManager.SoundType.INCREASE // А этот, когда increased == true
+                        })
+                    }
                 )
             }
         }
     }
 }
+
 
 
 fun createMediaPlayer(context: Context, resourceId: Int): MediaPlayer? {
@@ -462,85 +466,99 @@ fun PlayerLifeCounter(
     maxLife: Int,
     imageResourceId: Int,
     backgroundColor: Color,
+    backgroundImageIndex: Int,
     onLifeChange: (Int, Boolean) -> Unit,
-    backgroundImageIndex: Int // Используем backgroundImageIndex
+    context: Context
 ) {
-    val maxBrightness = 1f
-    val minBrightness = 0.2f
-    val imageBrightness = if (lifeTotal.value <= 25) {
-        (minBrightness + (lifeTotal.value.toFloat() / 25f) * (maxBrightness - minBrightness)).coerceIn(
-            minBrightness,
-            maxBrightness
-        )
-    } else {
-        maxBrightness
-    }
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val isWideScreen = screenWidth > 360.dp // Порог для переключения макета
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-            .shadow(6.dp, RoundedCornerShape(12.dp)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Image(
-            painter = painterResource(id = imageResourceId),
-            contentDescription = stringResource(R.string.player_image),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .alpha(imageBrightness)
-                .padding(bottom = 8.dp)
-                .animateContentSize(animationSpec = tween(300))
-        )
-        Spacer(modifier = Modifier.height(8.dp)) // Отступ между картинкой и именем
+    val buttonSize = min(screenWidth / 6, 70.dp).coerceAtLeast(50.dp)
+    val iconSize = buttonSize / 1.5f
+    val spacing = if (isWideScreen) 16.dp else 4.dp
+    val hpTextSize = if (isWideScreen) 110.sp else 43.sp // Адаптивный размер текста HP
 
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Box(
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        // Верхняя часть (картинка и элемент выбора)
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Image(
+                painter = painterResource(id = imageResourceId),
+                contentDescription = stringResource(R.string.player_image),
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .background(
-                        color = if (backgroundColor.luminance() > 0.5f) Color.Black.copy(alpha = 0.2f) else Color.White.copy(
-                            alpha = 0.2f
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .alpha(
+                        if (lifeTotal.value <= 25) {
+                            (0.2f + (lifeTotal.value.toFloat() / 25f) * 0.8f).coerceIn(0.2f, 1f)
+                        } else {
+                            1f
+                        }
                     )
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
+                    .padding(bottom = 8.dp)
+                    .animateContentSize(animationSpec = tween(300))
+            )
+            AnimatedNumberText(lifeTotal.value, backgroundColor, hpTextSize)
 
-            }
         }
-        Spacer(modifier = Modifier.height(16.dp)) // Отступ между именем и счетчиком ХП
 
-        AnimatedNumberText(lifeTotal.value, backgroundColor)
-
-        Spacer(modifier = Modifier.height(16.dp)) // Отступ между счетчиком ХП и кнопками
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceAround // Изменено на SpaceAround
-        ) {
-            AnimatedActionButton(
-                onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), false) },
-                icon = painterResource(id = android.R.drawable.arrow_up_float),
-                contentDescription = "Your button description",
-                neutralColor = Color(0x808B0000),
-                activeColor = Color(0xFF8B0000),
-                borderColor = Color.Black
-            )
-            AnimatedActionButton(
-                onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
-                icon = painterResource(id = android.R.drawable.arrow_down_float),
-                contentDescription = "Your button description",
-                neutralColor = Color(0x808B0000),
-                activeColor = Color(0xFF8B0000),
-                borderColor = Color.Black
-            )
+        if (isWideScreen) {
+            // Расположение кнопок внизу для больших экранов.  Используем SpaceBetween
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween // Изменено на SpaceBetween
+            ) {
+                AnimatedActionButton(
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), true) },
+                    icon = Icons.Filled.Favorite,
+                    contentDescription = "Increase life",
+                    buttonSize = buttonSize,
+                    iconSize = iconSize,
+                    cornerRadius = 12.dp,
+                    modifier = Modifier.weight(1f) // Добавили weight для больших экранов
+                )
+                AnimatedActionButton(
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
+                    icon = Icons.Filled.FavoriteBorder,
+                    contentDescription = "Decrease life",
+                    buttonSize = buttonSize,
+                    iconSize = iconSize,
+                    cornerRadius = 12.dp,
+                    modifier = Modifier.weight(1f) // Добавили weight для больших экранов
+                )
+            }
+        } else {
+            // Расположение кнопок по бокам для маленьких экранов
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                horizontalArrangement = Arrangement.SpaceAround // Изменено на SpaceAround
+            ) {
+                AnimatedActionButton(
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), false) },
+                    icon = Icons.Filled.Favorite,
+                    contentDescription = "Increase life",
+                    buttonSize = buttonSize,
+                    iconSize = iconSize,
+                    cornerRadius = 12.dp,
+                    // Убрали modifier = Modifier.weight(1f)
+                )
+                AnimatedActionButton(
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
+                    icon = Icons.Filled.FavoriteBorder,
+                    contentDescription = "Decrease life",
+                    buttonSize = buttonSize,
+                    iconSize = iconSize,
+                    cornerRadius = 12.dp,
+                    // Убрали modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
+
+
+
+
 
 
 @Composable
@@ -602,32 +620,29 @@ fun ImageItem(resourceId: Int, index: Int, onImageSelected: (Int) -> Unit, onDis
 @Composable
 fun AnimatedActionButton(
     onClick: () -> Unit,
-    icon: Painter,
+    icon: ImageVector,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    neutralColor: Color = Color(0x808B0000), // Dark Crimson (with alpha)
-    activeColor: Color = Color(0xFF8B0000), // Bright Crimson
-    animationDuration: Int = 100,
-    borderColor: Color = Color.White // Added border color parameter
+    neutralColor: Color = Color(0x808B0000),
+    activeColor: Color = Color(0xFF8B0000),
+    buttonSize: Dp = 40.dp,
+    iconSize: Dp = 20.dp,
+    cornerRadius: Dp = 12.dp, // Добавлен параметр cornerRadius
+    buttonPadding: Dp = 2.dp
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonColor by animateColorAsState(
         targetValue = if (isPressed) activeColor else neutralColor,
-        animationSpec = tween(animationDuration)
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else 1f,
-        animationSpec = tween(animationDuration)
+        animationSpec = tween(100)
     )
 
     IconButton(
         onClick = onClick,
         modifier = modifier
-            .size(70.dp)
-            .scale(scale)
-            .clip(CircleShape)
-            .border(width = 2.dp, color = borderColor, shape = CircleShape), // Added border
+            .size(buttonSize)
+            .clip(RoundedCornerShape(cornerRadius))
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(cornerRadius)),
         interactionSource = interactionSource,
         colors = IconButtonDefaults.iconButtonColors(
             containerColor = buttonColor,
@@ -635,31 +650,30 @@ fun AnimatedActionButton(
         )
     ) {
         Icon(
-            icon,
+            imageVector = icon,
             contentDescription = contentDescription,
             tint = Color.White,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp)
+                .size(iconSize)
+                .padding(buttonPadding)
         )
     }
 }
 
 
+
 @Composable
-fun AnimatedNumberText(number: Int, backgroundColor: Color) {
+fun AnimatedNumberText(number: Int, backgroundColor: Color, textSize: TextUnit) {
     val transition = updateTransition(targetState = number, label = "life")
     val animatedNumber by transition.animateFloat(label = "number") { it.toFloat() }
 
-    // Determine text color based on background luminance
     val textColor = Color.White
 
-    // Add a contrasting background for better visibility
-    Box(modifier = Modifier.padding(4.dp)) { // Added padding for better spacing
+    Box(modifier = Modifier.padding(4.dp)) {
         Box(
             modifier = Modifier
                 .background(
-                    color = textColor.copy(alpha = 0.2f), // Semi-transparent background color
+                    color = textColor.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(8.dp)
                 )
                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -667,7 +681,7 @@ fun AnimatedNumberText(number: Int, backgroundColor: Color) {
             Text(
                 text = animatedNumber.toInt().toString(),
                 style = MaterialTheme.typography.headlineLarge,
-                fontSize = 100.sp,
+                fontSize = textSize,
                 color = textColor,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center

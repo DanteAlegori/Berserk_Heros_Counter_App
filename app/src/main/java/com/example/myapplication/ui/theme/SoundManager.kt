@@ -10,35 +10,42 @@ class SoundManager(private val context: Context) {
     private var hsSoundId = 0
     private var hilSoundId = 0
     private var swordSoundId = 0
-    private var soundsLoaded = false // Flag to track loading status
+    private var soundsLoaded = 0
+    private var totalSoundsToLoad = 3 //Keep track of total sounds
+
 
     init {
         soundPool = SoundPool.Builder().setMaxStreams(3).build()
         soundPool?.setOnLoadCompleteListener { soundPool, sampleId, status ->
             if (status == 0) {
                 Log.d("SoundManager", "Sound loaded: $sampleId")
-                if (sampleId == swordSoundId) soundsLoaded = true //only set to true when sword is loaded
+                soundsLoaded++;
+                soundsLoaded == totalSoundsToLoad; // Use === for strict equality
+
             } else {
                 Log.e("SoundManager", "Sound loading failed: $sampleId, status: $status")
+                soundsLoaded = 0 //If one fails, set to false
             }
         }
 
-        hsSoundId = soundPool!!.load(context, R.raw.stokovoexp, 1) //Priority 1 for all sounds
-        hilSoundId = soundPool!!.load(context, R.raw.xp, 1)
+        hsSoundId = soundPool!!.load(context, R.raw.xp, 1)
+        hilSoundId = soundPool!!.load(context, R.raw.yron, 1)
         swordSoundId = soundPool!!.load(context, R.raw.hs, 1)
     }
 
     fun playSound(type: SoundType) {
-        if (!soundsLoaded) {
+        if (soundsLoaded==0) {
             Log.w("SoundManager", "Sounds not fully loaded yet. Trying again later.")
-            return // Don't play if sounds aren't loaded
+            return
         }
-        val soundId = when (type) {
-            SoundType.DECREASE -> hsSoundId
-            SoundType.INCREASE -> hilSoundId
-            SoundType.RESET -> swordSoundId
+        soundPool?.let {
+            val soundId = when (type) {
+                SoundType.DECREASE -> hsSoundId
+                SoundType.INCREASE -> hilSoundId
+                SoundType.RESET -> swordSoundId
+            }
+            it.play(soundId, 1f, 1f, 1, 0, 1f)
         }
-        soundPool?.play(soundId, 1f, 1f, 1, 0, 1f)
     }
 
     fun release() {
@@ -46,10 +53,9 @@ class SoundManager(private val context: Context) {
         soundPool = null
     }
 
-    enum class SoundType(val resourceId: Int) {
-        DECREASE(R.raw.glass),
-        INCREASE(R.raw.hil),
-        RESET(R.raw.sword)
+    enum class SoundType {
+        DECREASE,
+        INCREASE,
+        RESET
     }
 }
-
