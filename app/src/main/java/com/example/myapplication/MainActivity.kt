@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.SoundManager
@@ -167,7 +168,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                         onImageIndexChange = { selectedElementPlayer2 = it },
                         onShowImagePickerDialog = { showImagePickerDialog = 1 },
 
-                    )
+                        )
                 }
 
                 Card(
@@ -206,7 +207,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
             }
         }
         if (showImagePickerDialog != null) {
-            ImagePickerDialog(
+            RotatableImagePickerDialog(
                 imageResourceIds = imageResourceIds,
                 onImageSelected = { index ->
                     //  Обновляем состояние в зависимости от того, для какого игрока был открыт диалог
@@ -217,10 +218,12 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                     }
                     showImagePickerDialog = null
                 },
-                onDismiss = { showImagePickerDialog = null }
+                onDismiss = { showImagePickerDialog = null },
+                rotate = (showImagePickerDialog == 1) // Поворот для второго игрока
             )
         }
-}}
+    }
+}
 
 
 @Composable
@@ -230,7 +233,7 @@ fun ElementSelectionButton(
     onImageIndexChange: (Int) -> Unit,
     selectedImageIndex: Int
 ) {
-val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonColor = if (isPressed) Color.Red.copy(alpha = 0.8f) else Color.Red
     val scale by animateFloatAsState(
@@ -256,7 +259,11 @@ val interactionSource = remember { MutableInteractionSource() }
 
 
 @Composable
-fun ResetButton(modifier: Modifier = Modifier, onClick: () -> Unit, context: Context) { // Добавили context
+fun ResetButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    context: Context
+) { // Добавили context
     val soundManager = remember { SoundManager(context) } // Создаем SoundManager здесь
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -286,6 +293,41 @@ fun ResetButton(modifier: Modifier = Modifier, onClick: () -> Unit, context: Con
     }
 }
 
+@Composable
+fun RotatableImagePickerDialog(
+    imageResourceIds: List<Int>,
+    onImageSelected: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    rotate: Boolean = false // Флаг для вращения
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .rotate(if (rotate) 180f else 0f) // Вращение здесь
+
+        ) {
+            Column {
+                Text(
+                    "Выберите стихию",
+                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp), // Уменьшенный отступ
+                    verticalArrangement = Arrangement.spacedBy(4.dp), // Уменьшенный отступ
+                    horizontalArrangement = Arrangement.spacedBy(4.dp) // Уменьшенный отступ
+                ) {
+                    items(imageResourceIds.size) { index ->
+                        ImageItem(imageResourceIds[index], index, onImageSelected, onDismiss)
+                    }
+                }
+                Button(onClick = onDismiss) {
+                    Text("Отмена")
+                }
+            }
+        }
+    }
+}
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -312,8 +354,10 @@ fun PlayerLifeCounterCard(
     DisposableEffect(Unit) {
         onDispose { soundManager.release() }
     }
-    val backgroundColor = remember(backgroundImageIndex) { backgroundColors[backgroundImageIndex % backgroundColors.size] }
-    val imageResourceId = remember(backgroundImageIndex) { imageResourceIds[backgroundImageIndex % imageResourceIds.size] }
+    val backgroundColor =
+        remember(backgroundImageIndex) { backgroundColors[backgroundImageIndex % backgroundColors.size] }
+    val imageResourceId =
+        remember(backgroundImageIndex) { imageResourceIds[backgroundImageIndex % imageResourceIds.size] }
     val backgroundImageId = backgroundImageIds[backgroundImageIndex % backgroundImageIds.size]
 
 
@@ -380,10 +424,12 @@ fun PlayerLifeCounterCard(
                     context = context, // Передаем контекст сюда,
                     onLifeChange = { newValue, increased ->
                         lifeTotal.value = newValue
-                        soundManager.playSound(when {
-                            increased -> SoundManager.SoundType.DECREASE // Звук урона должен воспроизводиться, когда increased == false
-                            else -> SoundManager.SoundType.INCREASE // А этот, когда increased == true
-                        })
+                        soundManager.playSound(
+                            when {
+                                increased -> SoundManager.SoundType.DECREASE // Звук урона должен воспроизводиться, когда increased == false
+                                else -> SoundManager.SoundType.INCREASE // А этот, когда increased == true
+                            }
+                        )
                     }
                 )
             }
@@ -391,74 +437,6 @@ fun PlayerLifeCounterCard(
     }
 }
 
-
-
-fun createMediaPlayer(context: Context, resourceId: Int): MediaPlayer? {
-    return try {
-        MediaPlayer.create(context, resourceId).apply {
-            setOnErrorListener { mp, what, extra ->
-                Log.e("MediaPlayer", "Error: $what, extra: $extra")
-                false //возвращаем false, чтобы не прерывать воспроизведение других звуков
-            }
-        }
-    } catch (e: Exception) {
-        Log.e("MediaPlayer", "Error creating MediaPlayer: ${e.message}")
-        null
-    }
-}
-
-fun playSound(
-    increased: Boolean,
-    isPositiveChange: Boolean,
-    context: Context,
-    vararg mediaPlayers: MediaPlayer?
-) {
-    val player = when {
-        isPositiveChange -> mediaPlayers[1]
-        increased -> mediaPlayers[0]
-        else -> mediaPlayers[2]
-    }
-
-    player?.let {
-        if (it.isPlaying) {
-            it.release() // Освобождаем, если уже играет
-            return // Прерываем выполнение, новый MediaPlayer не создаём
-        }
-        try {
-            it.reset()
-            it.setDataSource(
-                context,
-                Uri.parse(
-                    "android.resource://" + context.packageName + "/" + getResourceId(
-                        it,
-                        mediaPlayers
-                    )
-                )
-            )
-            it.prepare()
-            it.start()
-            it.setOnCompletionListener { mp ->
-                mp.release()
-            }
-        } catch (e: Exception) {
-            Log.e("MediaPlayer", "Error playing sound: ${e.message}")
-        }
-    }
-}
-
-
-private fun getResourceId(player: MediaPlayer, mediaPlayers: Array<out MediaPlayer?>): Int {
-    return when (player) {
-        mediaPlayers[0] -> R.raw.hs
-        mediaPlayers[1] -> R.raw.hil
-        else -> R.raw.sword
-    }
-}
-
-
-fun releaseMediaPlayer(mediaPlayer: MediaPlayer?) {
-    mediaPlayer?.release()
-}
 
 @Composable
 fun PlayerLifeCounter(
@@ -505,9 +483,22 @@ fun PlayerLifeCounter(
         if (isWideScreen) {
             // Расположение кнопок внизу для больших экранов.  Используем SpaceBetween
             Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween // Изменено на SpaceBetween
             ) {
+
+
+                AnimatedActionButton(
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
+                    icon = Icons.Filled.FavoriteBorder,
+                    contentDescription = "Decrease life",
+                    buttonSize = buttonSize,
+                    iconSize = iconSize,
+                    cornerRadius = 12.dp,
+                    modifier = Modifier.weight(1f) // Добавили weight для больших экранов
+                )
                 AnimatedActionButton(
                     onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), true) },
                     icon = Icons.Filled.Favorite,
@@ -517,35 +508,30 @@ fun PlayerLifeCounter(
                     cornerRadius = 12.dp,
                     modifier = Modifier.weight(1f) // Добавили weight для больших экранов
                 )
-                AnimatedActionButton(
-                    onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
-                    icon = Icons.Filled.FavoriteBorder,
-                    contentDescription = "Decrease life",
-                    buttonSize = buttonSize,
-                    iconSize = iconSize,
-                    cornerRadius = 12.dp,
-                    modifier = Modifier.weight(1f) // Добавили weight для больших экранов
-                )
+
             }
         } else {
             // Расположение кнопок по бокам для маленьких экранов
             Row(
-                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceAround // Изменено на SpaceAround
             ) {
+
                 AnimatedActionButton(
-                    onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), false) },
-                    icon = Icons.Filled.Favorite,
-                    contentDescription = "Increase life",
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
+                    icon = Icons.Filled.FavoriteBorder,
+                    contentDescription = "Decrease life",
                     buttonSize = buttonSize,
                     iconSize = iconSize,
                     cornerRadius = 12.dp,
                     // Убрали modifier = Modifier.weight(1f)
                 )
                 AnimatedActionButton(
-                    onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
-                    icon = Icons.Filled.FavoriteBorder,
-                    contentDescription = "Decrease life",
+                    onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), false) },
+                    icon = Icons.Filled.Favorite,
+                    contentDescription = "Increase life",
                     buttonSize = buttonSize,
                     iconSize = iconSize,
                     cornerRadius = 12.dp,
@@ -556,39 +542,6 @@ fun PlayerLifeCounter(
     }
 }
 
-
-
-
-
-
-@Composable
-fun ImagePickerDialog(
-    imageResourceIds: List<Int>,
-    onImageSelected: (Int) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Выберите стихию", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)) }, // Увеличенный размер текста
-        text = {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2), // Два столбца
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(imageResourceIds.size) { index ->
-                    ImageItem(imageResourceIds[index], index, onImageSelected, onDismiss)
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Отмена")
-            }
-        }
-    )
-}
 
 @Composable
 fun ImageItem(resourceId: Int, index: Int, onImageSelected: (Int) -> Unit, onDismiss: () -> Unit) {
@@ -612,9 +565,6 @@ fun ImageItem(resourceId: Int, index: Int, onImageSelected: (Int) -> Unit, onDis
         )
     }
 }
-
-
-
 
 
 @Composable
@@ -659,7 +609,6 @@ fun AnimatedActionButton(
         )
     }
 }
-
 
 
 @Composable
