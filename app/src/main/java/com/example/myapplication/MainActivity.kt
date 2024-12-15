@@ -288,7 +288,7 @@ fun ElementSelectionButton(
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
-            .size(65.dp * scale), // Размер теперь зависит от масштаба
+            .size(58.dp * scale), // Размер теперь зависит от масштаба
         interactionSource = interactionSource,
         colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor)
     ) {
@@ -324,7 +324,7 @@ fun ResetButton(
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
-            .size(70.dp * scale),
+            .size(58.dp * scale),
         interactionSource = interactionSource,
         colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor)
     ) {
