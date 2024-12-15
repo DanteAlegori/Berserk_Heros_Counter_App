@@ -118,8 +118,10 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
         Color(0xFFACB78E),
         Color(0xFF9ACEEB)
     )
-    val resetPlayer1 = { player1Life.value = 25 }
-    val resetPlayer2 = { player2Life.value = 25 }
+    var resetHpPlayer1 by remember { mutableStateOf(25) }
+    var resetHpPlayer2 by remember { mutableStateOf(25) }
+    var resetPlayer1 = { player1Life.value = resetHpPlayer1 }
+    var resetPlayer2 = { player2Life.value = resetHpPlayer2 }
     var уголПоворота by remember { mutableStateOf(0f) }
     var selectedElementPlayer1 by remember { mutableStateOf(0) }
     var selectedElementPlayer2 by remember { mutableStateOf(1) }
@@ -225,14 +227,19 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
         if (showEditDialog) {
             EditHpDialog(
                 onDismiss = { showEditDialog = false; уголПоворота = 0f },
-                onSave = { hp, playerNum ->  // Функция сохранения принимает HP и номер игрока
-                    if (playerNum == 0) player1Life.value = hp
-                    else player2Life.value = hp
-                    showEditDialog = false
-                    уголПоворота = 0f
+                onSave = { hp, playerNum ->
+                    if (playerNum == 0) {
+                        player1Life.value = hp
+                        resetHpPlayer1 = hp
+                    } else {
+                        player2Life.value = hp
+                        resetHpPlayer2 = hp
+                    }
+                    showEditDialog = false // Закрываем диалог вне if-else
+                    уголПоворота = 0f      // Сбрасываем угол поворота вне if-else
                 },
                 initialHp = if (editingPlayer == 0) player1Life.value else player2Life.value,
-                playerNumber = editingPlayer ?: 0, // Передаем номер игрока
+                playerNumber = editingPlayer ?: 0,
                 onRotationChange = { angle -> уголПоворота = angle }
             )
         }
