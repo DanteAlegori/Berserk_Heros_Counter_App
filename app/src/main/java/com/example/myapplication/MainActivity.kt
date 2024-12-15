@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Favorite
@@ -35,18 +36,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -112,10 +118,15 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
         Color(0xFFACB78E),
         Color(0xFF9ACEEB)
     )
+    val resetPlayer1 = { player1Life.value = 25 }
+    val resetPlayer2 = { player2Life.value = 25 }
+    var уголПоворота by remember { mutableStateOf(0f) }
     var selectedElementPlayer1 by remember { mutableStateOf(0) }
     var selectedElementPlayer2 by remember { mutableStateOf(1) }
     var showImagePickerDialog by remember { mutableStateOf<Int?>(null) } // Индекс игрока для диалога
-
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingPlayer by remember { mutableStateOf<Int?>(null) } // 0 - Player1, 1 - Player2
+    var newHpValue by remember { mutableStateOf("") }
 
     Scaffold(modifier = Modifier.fillMaxSize(), contentColor = Color.White) { innerPadding ->
         Box(
@@ -128,6 +139,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                         colors = listOf(Color(0xFF202020), Color(0xFF242424))
                     )
                 )
+                .rotate(уголПоворота) // Поворачиваем весь экран
         ) {
             Column(
                 modifier = Modifier
@@ -150,7 +162,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     PlayerLifeCounterCard(
-
+                        onReset = resetPlayer2, // Передаем функцию сброса
                         lifeTotal = player2Life,
                         berserkGold,
                         berserkBloodRed,
@@ -167,8 +179,8 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                         gradientColors = gradientColors,
                         onImageIndexChange = { selectedElementPlayer2 = it },
                         onShowImagePickerDialog = { showImagePickerDialog = 1 },
-
-                        )
+                        onShowEditDialog = { editingPlayer = 1; showEditDialog = true } // Добавлено
+                    )
                 }
 
                 Card(
@@ -185,6 +197,8 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     PlayerLifeCounterCard(
+
+                        onReset = resetPlayer1,
                         lifeTotal = player1Life,
                         berserkGold,
                         berserkBloodRed,
@@ -199,13 +213,34 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                         gradientColors = gradientColors,
                         backgroundImageIndex = selectedElementPlayer1,
                         onImageIndexChange = { selectedElementPlayer1 = it },
-                        onShowImagePickerDialog = { showImagePickerDialog = 0 }
-
+                        onShowImagePickerDialog = { showImagePickerDialog = 0 },
+                                onShowEditDialog = {
+                            editingPlayer = 0; showEditDialog = true
+                        } // Добавлено
                     )
 
                 }
             }
         }
+        if (showEditDialog) {
+            EditHpDialog(
+                onDismiss = { showEditDialog = false; уголПоворота = 0f },
+                onSave = { hp, playerNum ->  // Функция сохранения принимает HP и номер игрока
+                    if (playerNum == 0) player1Life.value = hp
+                    else player2Life.value = hp
+                    showEditDialog = false
+                    уголПоворота = 0f
+                },
+                initialHp = if (editingPlayer == 0) player1Life.value else player2Life.value,
+                playerNumber = editingPlayer ?: 0, // Передаем номер игрока
+                onRotationChange = { angle -> уголПоворота = angle }
+            )
+        }
+
+
+
+
+
         if (showImagePickerDialog != null) {
             RotatableImagePickerDialog(
                 imageResourceIds = imageResourceIds,
@@ -224,6 +259,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
         }
     }
 }
+
 
 
 @Composable
@@ -329,10 +365,101 @@ fun RotatableImagePickerDialog(
     }
 }
 
+@Composable
+fun EditHpDialog(
+    onDismiss: () -> Unit,
+    onSave: (Int, Int) -> Unit,
+    initialHp: Int,
+    playerNumber: Int,
+    onRotationChange: (Float) -> Unit,
+    showInitialValue: Boolean = false // Added parameter to control initial value display
+) {
+    var hpValue by remember { mutableStateOf(if (showInitialValue) initialHp.toString() else "") }
+    var showError by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+
+    Dialog(onDismissRequest = onDismiss) {
+        LaunchedEffect(playerNumber) {
+            onRotationChange(if (playerNumber == 1) 180f else 0f)
+        }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Card(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(0.8f),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Изменение HP", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = hpValue,
+                        onValueChange = { newHpValue ->
+                            hpValue = newHpValue.filter { it.isDigit() }
+                            showError = false
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
+                        isError = showError,
+                        label = { Text("HP") },
+                        supportingText = {
+                            if (showError) {
+                                Text("Пожалуйста, введите число от 0 до 99", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Button(onClick = onDismiss) { Text("Отмена") }
+                        Button(onClick = {
+                            val parsedHp = hpValue.toIntOrNull()
+                            if (parsedHp != null && parsedHp in 0..99) {
+                                onSave(parsedHp, playerNumber)
+                                onDismiss()
+                            } else if (hpValue.isEmpty()){
+                                onSave(0, playerNumber)
+                                onDismiss()
+                            } else {
+                                showError = true
+                            }
+                        }) {
+                            Text("ОК")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun PlayerLifeCounterCard(
+    onReset: () -> Unit, // Добавляем параметр onReset
     lifeTotal: MutableState<Int>,
     berserkGold: Color,
     berserkBloodRed: Color,
@@ -348,7 +475,8 @@ fun PlayerLifeCounterCard(
     onLifeChange: (Int, Boolean) -> Unit,
     rotate: Boolean = false,
     backgroundImageIndex: Int,
-    onShowImagePickerDialog: (Int) -> Unit
+    onShowImagePickerDialog: (Int) -> Unit,
+    onShowEditDialog: () -> Unit
 ) {
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) {
@@ -400,11 +528,9 @@ fun PlayerLifeCounterCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.padding(13.dp)) {
-                        ResetButton(context = context, onClick = {
-                            lifeTotal.value = 25
-                            soundManager.playSound(SoundManager.SoundType.RESET)
-                        })
+                        ResetButton(context = context, onClick = onReset) // Используем переданную функцию
                     }
+
                     Column(modifier = Modifier.padding(5.dp)) {
                         ElementSelectionButton(
                             modifier = Modifier.padding(7.dp),
@@ -421,7 +547,8 @@ fun PlayerLifeCounterCard(
                     imageResourceId = imageResourceId,
                     backgroundColor = backgroundColor,
                     backgroundImageIndex = backgroundImageIndex,
-                    context = context, // Передаем контекст сюда,
+                    context = context,
+                    onShowEditDialog = onShowEditDialog ,// Передаем контекст сюда,
                     onLifeChange = { newValue, increased ->
                         lifeTotal.value = newValue
                         soundManager.playSound(
@@ -446,7 +573,8 @@ fun PlayerLifeCounter(
     backgroundColor: Color,
     backgroundImageIndex: Int,
     onLifeChange: (Int, Boolean) -> Unit,
-    context: Context
+    context: Context,
+    onShowEditDialog: () -> Unit
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val isWideScreen = screenWidth > 360.dp // Порог для переключения макета
@@ -476,7 +604,12 @@ fun PlayerLifeCounter(
                     .padding(bottom = 8.dp)
                     .animateContentSize(animationSpec = tween(300))
             )
-            AnimatedNumberText(lifeTotal.value, backgroundColor, hpTextSize)
+            AnimatedNumberText(
+                number = lifeTotal.value,
+                backgroundColor = backgroundColor,
+                textSize = hpTextSize,
+                onShowEditDialog = onShowEditDialog // Передача функции
+            )
 
         }
 
@@ -612,7 +745,12 @@ fun AnimatedActionButton(
 
 
 @Composable
-fun AnimatedNumberText(number: Int, backgroundColor: Color, textSize: TextUnit) {
+fun AnimatedNumberText(
+    number: Int,
+    backgroundColor: Color,
+    textSize: TextUnit,
+    onShowEditDialog: () -> Unit // Добавили функцию обратного вызова
+) {
     val transition = updateTransition(targetState = number, label = "life")
     val animatedNumber by transition.animateFloat(label = "number") { it.toFloat() }
 
@@ -621,6 +759,7 @@ fun AnimatedNumberText(number: Int, backgroundColor: Color, textSize: TextUnit) 
     Box(modifier = Modifier.padding(4.dp)) {
         Box(
             modifier = Modifier
+                .clickable { onShowEditDialog() } // Добавлено: Clickable modifier
                 .background(
                     color = textColor.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(8.dp)
@@ -638,3 +777,5 @@ fun AnimatedNumberText(number: Int, backgroundColor: Color, textSize: TextUnit) 
         }
     }
 }
+
+
