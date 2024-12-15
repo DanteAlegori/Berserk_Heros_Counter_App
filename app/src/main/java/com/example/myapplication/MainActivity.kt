@@ -2,10 +2,8 @@ package com.example.myapplication
 
 
 import android.content.Context
-import android.media.MediaPlayer
-import android.net.Uri
+import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
@@ -40,14 +37,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -64,28 +58,36 @@ import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.SoundManager
 
+interface OrientationChangeListener {
+    fun onPlayer2HpChange(showReverse: Boolean)
+}
 
-class MainActivity : ComponentActivity() {
+
+class MainActivity : ComponentActivity(), OrientationChangeListener {
+    private var currentOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                Navigation()
+                LifeCounterApp(this)
             }
         }
     }
+
+    override fun onPlayer2HpChange(showReverse: Boolean) {
+        currentOrientation = if (showReverse) ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        requestedOrientation = currentOrientation
+    }
 }
 
-@Composable
-fun Navigation() {
-    val navController = rememberNavController()
-    LifeCounterApp(navController)
-}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
-fun LifeCounterApp(navController: androidx.navigation.NavController) {
+fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
     val berserkGold = Color(0xFFB87333)
     val berserkBloodRed = Color(0xFF8B0000)
     val berserkDarkGrey = Color(0xFF2F2F2F)
@@ -118,6 +120,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
         Color(0xFFACB78E),
         Color(0xFF9ACEEB)
     )
+
     var resetHpPlayer1 by remember { mutableStateOf(25) }
     var resetHpPlayer2 by remember { mutableStateOf(25) }
     var resetPlayer1 = { player1Life.value = resetHpPlayer1 }
@@ -129,7 +132,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
     var showEditDialog by remember { mutableStateOf(false) }
     var editingPlayer by remember { mutableStateOf<Int?>(null) } // 0 - Player1, 1 - Player2
     var newHpValue by remember { mutableStateOf("") }
-
+    val listener = remember { orientationChangeListener } // Сохраняем listener в remember
     Scaffold(modifier = Modifier.fillMaxSize(), contentColor = Color.White) { innerPadding ->
         Box(
             modifier = Modifier
@@ -224,9 +227,14 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                 }
             }
         }
-        if (showEditDialog) {
+        LaunchedEffect(showEditDialog, editingPlayer) {
+            if (orientationChangeListener != null) {
+                orientationChangeListener.onPlayer2HpChange(showEditDialog && editingPlayer == 1)
+            }
+        }
+        if (showEditDialog && listener != null) { // Проверка на null
             EditHpDialog(
-                onDismiss = { showEditDialog = false; уголПоворота = 0f },
+                onDismiss = { listener.onPlayer2HpChange(false) },
                 onSave = { hp, playerNum ->
                     if (playerNum == 0) {
                         player1Life.value = hp
@@ -235,6 +243,7 @@ fun LifeCounterApp(navController: androidx.navigation.NavController) {
                         player2Life.value = hp
                         resetHpPlayer2 = hp
                     }
+                    listener.onPlayer2HpChange(false)
                     showEditDialog = false // Закрываем диалог вне if-else
                     уголПоворота = 0f      // Сбрасываем угол поворота вне if-else
                 },
@@ -384,11 +393,11 @@ fun EditHpDialog(
     var hpValue by remember { mutableStateOf(if (showInitialValue) initialHp.toString() else "") }
     var showError by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-
+    val orientationChangeListener = LocalContext.current as? OrientationChangeListener
 
     Dialog(onDismissRequest = onDismiss) {
         LaunchedEffect(playerNumber) {
-            onRotationChange(if (playerNumber == 1) 180f else 0f)
+            orientationChangeListener?.onPlayer2HpChange(playerNumber == 1)
         }
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Card(
