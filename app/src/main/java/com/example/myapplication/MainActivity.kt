@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.example.berserklifecounter
 
 
 import android.content.Context
@@ -58,8 +58,8 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.rememberNavController
+import com.example.berserklifecounter.ui.theme.SoundManager
 import com.example.myapplication.ui.theme.MyApplicationTheme
-import com.example.myapplication.ui.theme.SoundManager
 
 
 interface OrientationChangeListener {

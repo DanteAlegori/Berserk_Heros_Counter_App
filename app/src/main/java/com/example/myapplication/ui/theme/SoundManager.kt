@@ -1,10 +1,10 @@
-package com.example.myapplication.ui.theme
+package com.example.berserklifecounter.ui.theme
 
 import android.content.Context
 import android.media.SoundPool
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
-import com.example.myapplication.R
+import com.example.berserklifecounter.R
 
 class SoundManager(private val context: Context) {
     private var soundPool: SoundPool? = null

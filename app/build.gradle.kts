@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myapplication"
+    namespace = "com.example.berserklifecounter" // Изменено имя namespace
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.myapplication"
+        applicationId = "com.example.berserklifecounter" // Изменено applicationId
         minSdk = 24
         targetSdk = 34
         versionCode = 1
