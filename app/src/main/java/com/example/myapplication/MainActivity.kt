@@ -3,7 +3,9 @@ package com.example.myapplication
 
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -77,8 +79,22 @@ class MainActivity : ComponentActivity(), OrientationChangeListener {
     }
 
     override fun onPlayer2HpChange(showReverse: Boolean) {
-        currentOrientation = if (showReverse) ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        requestedOrientation = currentOrientation
+        val orientation = if (showReverse) ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+        // Запрещаем анимацию (не гарантируется на всех устройствах)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            )
+        }
+
+        requestedOrientation = orientation
+
+        // Установка флага обратно (необходимо для правильной работы других элементов UI)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        }
     }
 }
 
@@ -234,7 +250,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
         }
         if (showEditDialog && listener != null) { // Проверка на null
             EditHpDialog(
-                onDismiss = { listener.onPlayer2HpChange(false) },
+                onDismiss = {   showEditDialog = false },
                 onSave = { hp, playerNum ->
                     if (playerNum == 0) {
                         player1Life.value = hp
@@ -247,6 +263,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                     showEditDialog = false // Закрываем диалог вне if-else
                     уголПоворота = 0f      // Сбрасываем угол поворота вне if-else
                 },
+
                 initialHp = if (editingPlayer == 0) player1Life.value else player2Life.value,
                 playerNumber = editingPlayer ?: 0,
                 onRotationChange = { angle -> уголПоворота = angle }
@@ -383,22 +400,20 @@ fun RotatableImagePickerDialog(
 
 @Composable
 fun EditHpDialog(
-    onDismiss: () -> Unit,
     onSave: (Int, Int) -> Unit,
     initialHp: Int,
+    onDismiss: () -> Unit,
     playerNumber: Int,
     onRotationChange: (Float) -> Unit,
-    showInitialValue: Boolean = false // Added parameter to control initial value display
+    showInitialValue: Boolean = false
 ) {
-    var hpValue by remember { mutableStateOf(if (showInitialValue) initialHp.toString() else "") }
+    var hpValue by remember(initialHp, showInitialValue) {
+        mutableStateOf(if (showInitialValue) initialHp.toString() else "")
+    }
     var showError by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-    val orientationChangeListener = LocalContext.current as? OrientationChangeListener
 
-    Dialog(onDismissRequest = onDismiss) {
-        LaunchedEffect(playerNumber) {
-            orientationChangeListener?.onPlayer2HpChange(playerNumber == 1)
-        }
+    Dialog(onDismissRequest = onDismiss) { // onDismissRequest directly calls onDismiss
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Card(
                 modifier = Modifier
@@ -436,13 +451,14 @@ fun EditHpDialog(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Button(onClick = onDismiss) { Text("Отмена") }
+                        Button(onClick = onDismiss) { Text("Отмена") } // Directly calls onDismiss
                         Button(onClick = {
                             val parsedHp = hpValue.toIntOrNull()
-                            if (parsedHp != null && parsedHp in 0..99) {
-                                onSave(parsedHp, playerNumber)
+                            val hpToSave = parsedHp ?: 0 // Handle null case gracefully
+                            if (hpToSave in 0..99) {
+                                onSave(hpToSave, playerNumber)
                                 onDismiss()
-                            } else if (hpValue.isEmpty()){
+                            } else if (hpValue.isEmpty()) {
                                 onSave(0, playerNumber)
                                 onDismiss()
                             } else {
@@ -455,6 +471,7 @@ fun EditHpDialog(
                 }
             }
         }
+        //Removed LaunchedEffect -  This was likely interfering. Handle orientation changes elsewhere.
     }
 }
 
@@ -593,12 +610,12 @@ fun PlayerLifeCounter(
     onShowEditDialog: () -> Unit
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    val isWideScreen = screenWidth > 360.dp // Порог для переключения макета
+    val isWideScreen = screenWidth > 350.dp // Порог для переключения макета
 
     val buttonSize = min(screenWidth / 6, 70.dp).coerceAtLeast(50.dp)
     val iconSize = buttonSize / 1.5f
     val spacing = if (isWideScreen) 16.dp else 4.dp
-    val hpTextSize = if (isWideScreen) 110.sp else 43.sp // Адаптивный размер текста HP
+    val hpTextSize = if (isWideScreen) 110.sp else 65.sp // Адаптивный размер текста HP
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         // Верхняя часть (картинка и элемент выбора)
