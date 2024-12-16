@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -59,6 +60,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.SoundManager
+
 
 interface OrientationChangeListener {
     fun onPlayer2HpChange(showReverse: Boolean)
@@ -300,8 +302,10 @@ fun ElementSelectionButton(
     modifier: Modifier = Modifier,
     onClick: (Int) -> Unit, // Изменено: теперь функция принимает индекс
     onImageIndexChange: (Int) -> Unit,
-    selectedImageIndex: Int
+    selectedImageIndex: Int,
+    context: Context
 ) {
+    val soundManager = remember { SoundManager(context) } // Создаем SoundManager здесь
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonColor = if (isPressed) Color.Red.copy(alpha = 0.8f) else Color.Red
@@ -310,7 +314,9 @@ fun ElementSelectionButton(
         animationSpec = tween(100)
     )
     IconButton(
-        onClick = { onClick(selectedImageIndex) },
+        onClick = { onClick(selectedImageIndex)
+            soundManager.playSound(SoundManager.SoundType.Menu)
+                  },
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
@@ -569,7 +575,9 @@ fun PlayerLifeCounterCard(
                             modifier = Modifier.padding(7.dp),
                             onClick = onShowImagePickerDialog,
                             onImageIndexChange = onImageIndexChange,
-                            selectedImageIndex = backgroundImageIndex
+                            selectedImageIndex = backgroundImageIndex,
+                            context = context // Pass the context here
+
                         )
                     }
                 }
@@ -641,7 +649,8 @@ fun PlayerLifeCounter(
                 number = lifeTotal.value,
                 backgroundColor = backgroundColor,
                 textSize = hpTextSize,
-                onShowEditDialog = onShowEditDialog // Передача функции
+                onShowEditDialog = onShowEditDialog,
+                context = context // Pass the context here
             )
 
         }
@@ -782,8 +791,22 @@ fun AnimatedNumberText(
     number: Int,
     backgroundColor: Color,
     textSize: TextUnit,
-    onShowEditDialog: () -> Unit // Добавили функцию обратного вызова
+    onShowEditDialog: () -> Unit,
+    context: Context
 ) {
+    val soundManager = remember { SoundManager(context) }
+    val soundLoadSuccess by remember(soundManager) {
+        derivedStateOf { soundManager.soundLoadSuccess.value }
+    }
+
+    LaunchedEffect(soundLoadSuccess) {
+        if (soundLoadSuccess) {
+            Log.d("SoundManager", "Sounds loaded successfully!")
+        } else {
+            Log.e("SoundManager", "Sound loading failed.")
+        }
+    }
+
     val transition = updateTransition(targetState = number, label = "life")
     val animatedNumber by transition.animateFloat(label = "number") { it.toFloat() }
 
@@ -792,7 +815,12 @@ fun AnimatedNumberText(
     Box(modifier = Modifier.padding(4.dp)) {
         Box(
             modifier = Modifier
-                .clickable { onShowEditDialog() } // Добавлено: Clickable modifier
+                .clickable {
+                    onShowEditDialog()
+                    if(soundLoadSuccess) { // only play sound if loading was successful.
+                        soundManager.playSound(SoundManager.SoundType.Text)
+                    }
+                }
                 .background(
                     color = textColor.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(8.dp)
@@ -809,6 +837,10 @@ fun AnimatedNumberText(
             )
         }
     }
+    DisposableEffect(Unit) {
+        onDispose { soundManager.release() }
+    }
 }
+
 
 

@@ -3,6 +3,7 @@ package com.example.myapplication.ui.theme
 import android.content.Context
 import android.media.SoundPool
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import com.example.myapplication.R
 
 class SoundManager(private val context: Context) {
@@ -10,8 +11,11 @@ class SoundManager(private val context: Context) {
     private var hsSoundId = 0
     private var hilSoundId = 0
     private var swordSoundId = 0
+    private var textSoundId = 0
+    private var menuSoundId = 0
     private var soundsLoaded = 0
-    private var totalSoundsToLoad = 3 //Keep track of total sounds
+    private var totalSoundsToLoad = 3
+    val soundLoadSuccess = mutableStateOf(false) //track if loading succeeded
 
 
     init {
@@ -19,22 +23,26 @@ class SoundManager(private val context: Context) {
         soundPool?.setOnLoadCompleteListener { soundPool, sampleId, status ->
             if (status == 0) {
                 Log.d("SoundManager", "Sound loaded: $sampleId")
-                soundsLoaded++;
-                soundsLoaded == totalSoundsToLoad; // Use === for strict equality
-
+                soundsLoaded++
+                if (soundsLoaded == totalSoundsToLoad) {
+                    soundLoadSuccess.value = true // Set to true only when all sounds are loaded
+                }
             } else {
                 Log.e("SoundManager", "Sound loading failed: $sampleId, status: $status")
-                soundsLoaded = 0 //If one fails, set to false
+                soundsLoaded = 0 // Reset if any fail
+                soundLoadSuccess.value = false
             }
         }
 
         hsSoundId = soundPool!!.load(context, R.raw.xp, 1)
         hilSoundId = soundPool!!.load(context, R.raw.yron, 1)
         swordSoundId = soundPool!!.load(context, R.raw.hs, 1)
+        textSoundId = soundPool!!.load(context,R.raw.text,1)
+       menuSoundId = soundPool!!.load(context,R.raw.menu,1)
     }
 
     fun playSound(type: SoundType) {
-        if (soundsLoaded==0) {
+        if (!soundLoadSuccess.value) {
             Log.w("SoundManager", "Sounds not fully loaded yet. Trying again later.")
             return
         }
@@ -43,8 +51,15 @@ class SoundManager(private val context: Context) {
                 SoundType.DECREASE -> hsSoundId
                 SoundType.INCREASE -> hilSoundId
                 SoundType.RESET -> swordSoundId
+                SoundType.Text -> textSoundId
+                SoundType.Menu -> menuSoundId
+                else -> 0 // handle unknown type
             }
-            it.play(soundId, 1f, 1f, 1, 0, 1f)
+            if(soundId !=0){
+                it.play(soundId, 1f, 1f, 1, 0, 1f)
+            } else{
+                Log.e("SoundManager", "Sound ID is 0 for type: $type")
+            }
         }
     }
 
@@ -56,6 +71,9 @@ class SoundManager(private val context: Context) {
     enum class SoundType {
         DECREASE,
         INCREASE,
-        RESET
+        RESET,
+        Text,
+        Menu
     }
 }
+
