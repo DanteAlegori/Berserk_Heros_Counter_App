@@ -81,7 +81,8 @@ class MainActivity : ComponentActivity(), OrientationChangeListener {
     }
 
     override fun onPlayer2HpChange(showReverse: Boolean) {
-        val orientation = if (showReverse) ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        val orientation =
+            if (showReverse) ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         // Запрещаем анимацию (не гарантируется на всех устройствах)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -99,8 +100,6 @@ class MainActivity : ComponentActivity(), OrientationChangeListener {
         }
     }
 }
-
-
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
@@ -122,6 +121,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
         R.drawable.gori_bacgraund
     )
 
+
     val imageResourceIds = listOf(
         R.drawable.stepi,
         R.drawable.forest,
@@ -130,6 +130,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
         R.drawable.boloto,
         R.drawable.gori
     )
+
     val backgroundColors = listOf(
         Color(0xFFE6D690),
         Color(0xFFA8E4A0),
@@ -237,7 +238,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                         backgroundImageIndex = selectedElementPlayer1,
                         onImageIndexChange = { selectedElementPlayer1 = it },
                         onShowImagePickerDialog = { showImagePickerDialog = 0 },
-                                onShowEditDialog = {
+                        onShowEditDialog = {
                             editingPlayer = 0; showEditDialog = true
                         } // Добавлено
                     )
@@ -245,14 +246,16 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                 }
             }
         }
+
         LaunchedEffect(showEditDialog, editingPlayer) {
             if (orientationChangeListener != null) {
                 orientationChangeListener.onPlayer2HpChange(showEditDialog && editingPlayer == 1)
             }
         }
+
         if (showEditDialog && listener != null) { // Проверка на null
             EditHpDialog(
-                onDismiss = {   showEditDialog = false },
+                onDismiss = { showEditDialog = false },
                 onSave = { hp, playerNum ->
                     if (playerNum == 0) {
                         player1Life.value = hp
@@ -296,7 +299,6 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
 }
 
 
-
 @Composable
 fun ElementSelectionButton(
     modifier: Modifier = Modifier,
@@ -314,9 +316,10 @@ fun ElementSelectionButton(
         animationSpec = tween(100)
     )
     IconButton(
-        onClick = { onClick(selectedImageIndex)
+        onClick = {
+            onClick(selectedImageIndex)
             soundManager.playSound(SoundManager.SoundType.Menu)
-                  },
+        },
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
@@ -447,7 +450,10 @@ fun EditHpDialog(
                         label = { Text("HP") },
                         supportingText = {
                             if (showError) {
-                                Text("Пожалуйста, введите число от 0 до 99", color = MaterialTheme.colorScheme.error)
+                                Text(
+                                    "Пожалуйста, введите число от 0 до 99",
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
                     )
@@ -480,19 +486,6 @@ fun EditHpDialog(
         //Removed LaunchedEffect -  This was likely interfering. Handle orientation changes elsewhere.
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -567,7 +560,10 @@ fun PlayerLifeCounterCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.padding(13.dp)) {
-                        ResetButton(context = context, onClick = onReset) // Используем переданную функцию
+                        ResetButton(
+                            context = context,
+                            onClick = onReset
+                        ) // Используем переданную функцию
                     }
 
                     Column(modifier = Modifier.padding(5.dp)) {
@@ -589,7 +585,7 @@ fun PlayerLifeCounterCard(
                     backgroundColor = backgroundColor,
                     backgroundImageIndex = backgroundImageIndex,
                     context = context,
-                    onShowEditDialog = onShowEditDialog ,// Передаем контекст сюда,
+                    onShowEditDialog = onShowEditDialog,// Передаем контекст сюда,
                     onLifeChange = { newValue, increased ->
                         lifeTotal.value = newValue
                         soundManager.playSound(
@@ -604,7 +600,7 @@ fun PlayerLifeCounterCard(
         }
     }
 }
-
+//Version code mode
 
 @Composable
 fun PlayerLifeCounter(
@@ -817,7 +813,7 @@ fun AnimatedNumberText(
             modifier = Modifier
                 .clickable {
                     onShowEditDialog()
-                    if(soundLoadSuccess) { // only play sound if loading was successful.
+                    if (soundLoadSuccess) { // only play sound if loading was successful.
                         soundManager.playSound(SoundManager.SoundType.Text)
                     }
                 }
