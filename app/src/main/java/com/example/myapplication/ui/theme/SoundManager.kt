@@ -37,8 +37,8 @@ class SoundManager(private val context: Context) {
         hsSoundId = soundPool!!.load(context, R.raw.xp, 1)
         hilSoundId = soundPool!!.load(context, R.raw.yron, 1)
         swordSoundId = soundPool!!.load(context, R.raw.hs, 1)
-        textSoundId = soundPool!!.load(context,R.raw.text,1)
-       menuSoundId = soundPool!!.load(context,R.raw.menu,1)
+        textSoundId = soundPool!!.load(context,R.raw.anime_text,1)
+       menuSoundId = soundPool!!.load(context,R.raw.memalert,1)
     }
 
     fun playSound(type: SoundType) {
