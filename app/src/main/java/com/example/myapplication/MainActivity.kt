@@ -19,8 +19,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -66,7 +69,7 @@ interface OrientationChangeListener {
     fun onPlayer2HpChange(showReverse: Boolean)
 }
 
-
+// MainActivity (изменено)
 class MainActivity : ComponentActivity(), OrientationChangeListener {
     private var currentOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
@@ -100,8 +103,7 @@ class MainActivity : ComponentActivity(), OrientationChangeListener {
         }
     }
 }
-
-
+data class Theme(val name: String, val backgroundIds: List<Int>)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
@@ -112,14 +114,82 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
     val player1Life = remember { mutableStateOf(25) }
     val player2Life = remember { mutableStateOf(25) }
     val gradientColors = listOf(Color(0xFF333333), Color(0xFF666666))
-    val backgroundImageIds = listOf(
-        R.drawable.stepi_bacgraund,
-        R.drawable.forest_bacgraund,
-        R.drawable.natral_bacgraund,
-        R.drawable.dark_bacgraund,
-        R.drawable.boloto_backgraund,
-        R.drawable.gori_bacgraund
-    )
+
+
+    val themes = remember {
+        listOf(
+            Theme(
+                name = "Стандартная",
+                backgroundIds =  listOf(
+                    R.drawable.stepi_bacgraund,
+                    R.drawable.forest_bacgraund,
+                    R.drawable.natral_bacgraund,
+                    R.drawable.dark_bacgraund,
+                    R.drawable.boloto_backgraund,
+                    R.drawable.gori_bacgraund,
+                )
+            ),
+            Theme(
+                name = "Темная",
+                backgroundIds = listOf(
+                    R.drawable.dark_bacgraund,
+                    R.drawable.boloto_backgraund,
+                    R.drawable.gori_bacgraund,
+                    R.drawable.stepi_bacgraund,
+                    R.drawable.forest_bacgraund,
+                    R.drawable.natral_bacgraund,
+                )
+            ),
+            Theme(
+                name = "Природа",
+                backgroundIds =  listOf(
+                    R.drawable.gori_bacgraund,
+                    R.drawable.stepi_bacgraund,
+                    R.drawable.forest_bacgraund,
+                    R.drawable.natral_bacgraund,
+                    R.drawable.dark_bacgraund,
+                    R.drawable.boloto_backgraund
+                )
+            ),
+            Theme(
+                name = "Горы",
+                backgroundIds = listOf(
+                    R.drawable.gori_bacgraund,
+                    R.drawable.dark_bacgraund,
+                    R.drawable.stepi_bacgraund,
+                    R.drawable.forest_bacgraund,
+                    R.drawable.natral_bacgraund,
+                    R.drawable.boloto_backgraund,
+
+                    )
+            ),
+            Theme(
+                name = "Пустыня",
+                backgroundIds = listOf(
+                    R.drawable.stepi_bacgraund,
+                    R.drawable.gori_bacgraund,
+                    R.drawable.forest_bacgraund,
+                    R.drawable.natral_bacgraund,
+                    R.drawable.dark_bacgraund,
+                    R.drawable.boloto_backgraund
+                )
+            ),
+
+            Theme(
+                name = "Океан",
+                backgroundIds =  listOf(
+                    R.drawable.natral_bacgraund,
+                    R.drawable.gori_bacgraund,
+                    R.drawable.stepi_bacgraund,
+                    R.drawable.forest_bacgraund,
+                    R.drawable.dark_bacgraund,
+                    R.drawable.boloto_backgraund
+                )
+            ),
+        )
+    }
+    var selectedBackgroundThemeIndexPlayer1 by remember { mutableStateOf(0) }
+    var selectedBackgroundThemeIndexPlayer2 by remember { mutableStateOf(0) }
 
 
     val imageResourceIds = listOf(
@@ -152,6 +222,9 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
     var editingPlayer by remember { mutableStateOf<Int?>(null) } // 0 - Player1, 1 - Player2
     var newHpValue by remember { mutableStateOf("") }
     val listener = remember { orientationChangeListener } // Сохраняем listener в remember
+    var showBackgroundThemeDialog by remember { mutableStateOf<Int?>(null) }
+
+
     Scaffold(modifier = Modifier.fillMaxSize(), contentColor = Color.White) { innerPadding ->
         Box(
             modifier = Modifier
@@ -182,10 +255,25 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                             Log.d("Menu","Game Mode Clicked")
                         },
                         onAppearanceClick = {
-                            // TODO: Handle appearance click
+                            showBackgroundThemeDialog = showImageMenuDialog
                             Log.d("Menu","Appearance Clicked")
                         },
                         rotate = (showImageMenuDialog == 1)
+                    )
+                }
+                if (showBackgroundThemeDialog != null) {
+                    BackgroundThemeSelectionDialog(
+                        themes = themes,
+                        onThemeSelected = { index ->
+                            if(showBackgroundThemeDialog == 0){
+                                selectedBackgroundThemeIndexPlayer1 = index
+                            }else if (showBackgroundThemeDialog == 1){
+                                selectedBackgroundThemeIndexPlayer2 = index
+                            }
+                            showBackgroundThemeDialog = null
+                        },
+                        onDismiss = { showBackgroundThemeDialog = null },
+                        rotate = (showBackgroundThemeDialog == 1)
                     )
                 }
 
@@ -213,7 +301,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                         backgroundColors,
                         maxLife = 100,
                         context = LocalContext.current,
-                        backgroundImageIds,
+                        backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer2].backgroundIds,
                         onLifeChange = { newValue, increased -> player2Life.value = newValue },
                         rotate = true,
                         backgroundImageIndex = selectedElementPlayer2,
@@ -252,19 +340,20 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                         backgroundColors,
                         maxLife = 100,
                         context = LocalContext.current,
-                        backgroundImageIds,
+                        backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer1].backgroundIds,
                         onLifeChange = { newValue, increased -> player1Life.value = newValue },
                         gradientColors = gradientColors,
                         backgroundImageIndex = selectedElementPlayer1,
                         onShowEditDialog = {
                             editingPlayer = 0; showEditDialog = true
                         },
-                        onImageMenuClick = {  if(it == null){
-                            showImagePickerDialog = 0
-                        } else{
-                            showImageMenuDialog = it
-                        }}
-
+                        onImageMenuClick = {
+                            if(it == null){
+                                showImagePickerDialog = 0
+                            } else{
+                                showImageMenuDialog = it
+                            }
+                        }
                     )
                 }
             }
@@ -319,6 +408,9 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
 
 
 
+
+
+// ElementSelectionButton (изменено)
 @Composable
 fun ElementSelectionButton(
     modifier: Modifier = Modifier,
@@ -525,7 +617,7 @@ fun PlayerLifeCounterCard(
     rotate: Boolean = false,
     backgroundImageIndex: Int,
     onShowEditDialog: () -> Unit,
-    onImageMenuClick: (Int?) -> Unit
+    onImageMenuClick: (Int?) -> Unit,
 ) {
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) {
@@ -588,7 +680,7 @@ fun PlayerLifeCounterCard(
                     Column(modifier = Modifier.padding(5.dp)) {
                         ElementSelectionButton(
                             modifier = Modifier.padding(7.dp),
-                            onClick = { onImageMenuClick(it) }, // Открываем диалог выбора стихии напрямую по клику
+                            onClick = { onImageMenuClick(it) },
                             context = context
                         )
                     }
@@ -876,7 +968,7 @@ fun ImageOptionsMenu(
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
                         onAppearanceClick()
-                        onDismiss()
+                        // onDismiss()
                     },  modifier = Modifier.fillMaxWidth()) {
                         Text("Оформление")
                     }
@@ -890,3 +982,74 @@ fun ImageOptionsMenu(
     }
 }
 
+
+@Composable
+fun BackgroundThemeSelectionDialog(
+    themes: List<Theme>,
+    onThemeSelected: (Int) -> Unit,
+    onDismiss: () -> Unit,
+    rotate: Boolean = false
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.rotate(if (rotate) 180f else 0f)) {
+            Card(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(0.8f)
+                    .heightIn(max = 500.dp),  // Ограничение высоты
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Выберите тему оформления", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1), // Одна колонка для вертикального списка
+                        contentPadding = PaddingValues(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        itemsIndexed(themes) { index, theme ->
+                            BackgroundThemeSetItem(
+                                theme = theme,
+                                onClick = {
+                                    onThemeSelected(index)
+                                    onDismiss()
+                                }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                        Text("Отмена")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// BackgroundThemeSetItem (изменено)
+@Composable
+fun BackgroundThemeSetItem(theme: Theme, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = theme.name,
+                modifier = Modifier.padding(16.dp),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+    }
+}
