@@ -172,9 +172,26 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                var showImageMenuDialog by remember { mutableStateOf<Int?>(null) }
+
+                if (showImageMenuDialog != null) {
+                    ImageOptionsMenu(
+                        onDismiss = { showImageMenuDialog = null },
+                        onGameModeClick = {
+                            // TODO: Handle game mode click
+                            Log.d("Menu","Game Mode Clicked")
+                        },
+                        onAppearanceClick = {
+                            // TODO: Handle appearance click
+                            Log.d("Menu","Appearance Clicked")
+                        },
+                        rotate = (showImageMenuDialog == 1)
+                    )
+                }
+
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth() // Удалено 0.9f, теперь заполняет всю ширину
+                        .fillMaxWidth()
                         .weight(1f)
                         .padding(8.dp)
                         .border(
@@ -186,7 +203,7 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     PlayerLifeCounterCard(
-                        onReset = resetPlayer2, // Передаем функцию сброса
+                        onReset = resetPlayer2,
                         lifeTotal = player2Life,
                         berserkGold,
                         berserkBloodRed,
@@ -201,15 +218,19 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                         rotate = true,
                         backgroundImageIndex = selectedElementPlayer2,
                         gradientColors = gradientColors,
-                        onImageIndexChange = { selectedElementPlayer2 = it },
-                        onShowImagePickerDialog = { showImagePickerDialog = 1 },
-                        onShowEditDialog = { editingPlayer = 1; showEditDialog = true } // Добавлено
+                        onShowEditDialog = { editingPlayer = 1; showEditDialog = true },
+                        onImageMenuClick = {
+                            if(it == null){
+                                showImagePickerDialog = 1
+                            } else{
+                                showImageMenuDialog = it
+                            }
+                        }
                     )
                 }
-
                 Card(
                     modifier = Modifier
-                        .fillMaxWidth() // Удалено 0.9f, теперь заполняет всю ширину
+                        .fillMaxWidth()
                         .weight(1f)
                         .padding(8.dp)
                         .border(
@@ -221,7 +242,6 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     PlayerLifeCounterCard(
-
                         onReset = resetPlayer1,
                         lifeTotal = player1Life,
                         berserkGold,
@@ -236,78 +256,76 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                         onLifeChange = { newValue, increased -> player1Life.value = newValue },
                         gradientColors = gradientColors,
                         backgroundImageIndex = selectedElementPlayer1,
-                        onImageIndexChange = { selectedElementPlayer1 = it },
-                        onShowImagePickerDialog = { showImagePickerDialog = 0 },
                         onShowEditDialog = {
                             editingPlayer = 0; showEditDialog = true
-                        } // Добавлено
-                    )
+                        },
+                        onImageMenuClick = {  if(it == null){
+                            showImagePickerDialog = 0
+                        } else{
+                            showImageMenuDialog = it
+                        }}
 
+                    )
                 }
             }
         }
+    }
 
-        LaunchedEffect(showEditDialog, editingPlayer) {
-            if (orientationChangeListener != null) {
-                orientationChangeListener.onPlayer2HpChange(showEditDialog && editingPlayer == 1)
-            }
-        }
-
-        if (showEditDialog && listener != null) { // Проверка на null
-            EditHpDialog(
-                onDismiss = { showEditDialog = false },
-                onSave = { hp, playerNum ->
-                    if (playerNum == 0) {
-                        player1Life.value = hp
-                        resetHpPlayer1 = hp
-                    } else {
-                        player2Life.value = hp
-                        resetHpPlayer2 = hp
-                    }
-                    listener.onPlayer2HpChange(false)
-                    showEditDialog = false // Закрываем диалог вне if-else
-                    уголПоворота = 0f      // Сбрасываем угол поворота вне if-else
-                },
-
-                initialHp = if (editingPlayer == 0) player1Life.value else player2Life.value,
-                playerNumber = editingPlayer ?: 0,
-                onRotationChange = { angle -> уголПоворота = angle }
-            )
-        }
-
-
-
-
-
-        if (showImagePickerDialog != null) {
-            RotatableImagePickerDialog(
-                imageResourceIds = imageResourceIds,
-                onImageSelected = { index ->
-                    //  Обновляем состояние в зависимости от того, для какого игрока был открыт диалог
-                    when (showImagePickerDialog) {
-                        0 -> selectedElementPlayer1 = index
-                        1 -> selectedElementPlayer2 = index
-                        else -> {} // Обработка некорректных значений
-                    }
-                    showImagePickerDialog = null
-                },
-                onDismiss = { showImagePickerDialog = null },
-                rotate = (showImagePickerDialog == 1) // Поворот для второго игрока
-            )
+    LaunchedEffect(showEditDialog, editingPlayer) {
+        if (orientationChangeListener != null) {
+            orientationChangeListener.onPlayer2HpChange(showEditDialog && editingPlayer == 1)
         }
     }
+
+    if (showEditDialog && listener != null) {
+        EditHpDialog(
+            onDismiss = { showEditDialog = false },
+            onSave = { hp, playerNum ->
+                if (playerNum == 0) {
+                    player1Life.value = hp
+                    resetHpPlayer1 = hp
+                } else {
+                    player2Life.value = hp
+                    resetHpPlayer2 = hp
+                }
+                listener.onPlayer2HpChange(false)
+                showEditDialog = false
+                уголПоворота = 0f
+            },
+
+            initialHp = if (editingPlayer == 0) player1Life.value else player2Life.value,
+            playerNumber = editingPlayer ?: 0,
+            onRotationChange = { angle -> уголПоворота = angle }
+        )
+    }
+
+    if (showImagePickerDialog != null) {
+        RotatableImagePickerDialog(
+            imageResourceIds = imageResourceIds,
+            onImageSelected = { index ->
+                when (showImagePickerDialog) {
+                    0 -> selectedElementPlayer1 = index
+                    1 -> selectedElementPlayer2 = index
+                    else -> {}
+                }
+                showImagePickerDialog = null
+            },
+            onDismiss = { showImagePickerDialog = null },
+            rotate = (showImagePickerDialog == 1)
+        )
+    }
+
 }
+
 
 
 @Composable
 fun ElementSelectionButton(
     modifier: Modifier = Modifier,
-    onClick: (Int) -> Unit, // Изменено: теперь функция принимает индекс
-    onImageIndexChange: (Int) -> Unit,
-    selectedImageIndex: Int,
+    onClick: (Int?) -> Unit,
     context: Context
 ) {
-    val soundManager = remember { SoundManager(context) } // Создаем SoundManager здесь
+    val soundManager = remember { SoundManager(context) }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonColor = if (isPressed) Color.Red.copy(alpha = 0.8f) else Color.Red
@@ -317,13 +335,13 @@ fun ElementSelectionButton(
     )
     IconButton(
         onClick = {
-            onClick(selectedImageIndex)
+            onClick(null) // Передаем null чтобы открыть диалог
             soundManager.playSound(SoundManager.SoundType.Menu)
         },
         modifier = modifier
             .clip(CircleShape)
             .scale(scale)
-            .size(58.dp * scale), // Размер теперь зависит от масштаба
+            .size(58.dp * scale),
         interactionSource = interactionSource,
         colors = IconButtonDefaults.iconButtonColors(containerColor = buttonColor)
     ) {
@@ -334,6 +352,8 @@ fun ElementSelectionButton(
         )
     }
 }
+
+
 
 
 @Composable
@@ -487,11 +507,9 @@ fun EditHpDialog(
     }
 }
 
-
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun PlayerLifeCounterCard(
-    onReset: () -> Unit, // Добавляем параметр onReset
+    onReset: () -> Unit,
     lifeTotal: MutableState<Int>,
     berserkGold: Color,
     berserkBloodRed: Color,
@@ -503,12 +521,11 @@ fun PlayerLifeCounterCard(
     context: Context,
     backgroundImageIds: List<Int>,
     gradientColors: List<Color>,
-    onImageIndexChange: (Int) -> Unit,
     onLifeChange: (Int, Boolean) -> Unit,
     rotate: Boolean = false,
     backgroundImageIndex: Int,
-    onShowImagePickerDialog: (Int) -> Unit,
-    onShowEditDialog: () -> Unit
+    onShowEditDialog: () -> Unit,
+    onImageMenuClick: (Int?) -> Unit
 ) {
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) {
@@ -550,7 +567,9 @@ fun PlayerLifeCounterCard(
                     painter = painterResource(id = backgroundImageId),
                     contentDescription = "Background Image",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { onImageMenuClick(if (rotate) 1 else 0) } // Открытие меню по клику на Image
                 )
 
                 Row(
@@ -563,17 +582,14 @@ fun PlayerLifeCounterCard(
                         ResetButton(
                             context = context,
                             onClick = onReset
-                        ) // Используем переданную функцию
+                        )
                     }
 
                     Column(modifier = Modifier.padding(5.dp)) {
                         ElementSelectionButton(
                             modifier = Modifier.padding(7.dp),
-                            onClick = onShowImagePickerDialog,
-                            onImageIndexChange = onImageIndexChange,
-                            selectedImageIndex = backgroundImageIndex,
-                            context = context // Pass the context here
-
+                            onClick = { onImageMenuClick(it) }, // Открываем диалог выбора стихии напрямую по клику
+                            context = context
                         )
                     }
                 }
@@ -585,22 +601,22 @@ fun PlayerLifeCounterCard(
                     backgroundColor = backgroundColor,
                     backgroundImageIndex = backgroundImageIndex,
                     context = context,
-                    onShowEditDialog = onShowEditDialog,// Передаем контекст сюда,
+                    onShowEditDialog = onShowEditDialog,
                     onLifeChange = { newValue, increased ->
                         lifeTotal.value = newValue
                         soundManager.playSound(
                             when {
-                                increased -> SoundManager.SoundType.DECREASE // Звук урона должен воспроизводиться, когда increased == false
-                                else -> SoundManager.SoundType.INCREASE // А этот, когда increased == true
+                                increased -> SoundManager.SoundType.DECREASE
+                                else -> SoundManager.SoundType.INCREASE
                             }
                         )
-                    }
+                    },
+                    onImageClick = { onImageMenuClick(if(rotate) 1 else 0) }
                 )
             }
         }
     }
 }
-//Version code mode
 
 @Composable
 fun PlayerLifeCounter(
@@ -611,18 +627,19 @@ fun PlayerLifeCounter(
     backgroundImageIndex: Int,
     onLifeChange: (Int, Boolean) -> Unit,
     context: Context,
-    onShowEditDialog: () -> Unit
+    onShowEditDialog: () -> Unit,
+    onImageClick: () -> Unit // Изменено
+
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    val isWideScreen = screenWidth > 350.dp // Порог для переключения макета
+    val isWideScreen = screenWidth > 350.dp
 
     val buttonSize = min(screenWidth / 6, 70.dp).coerceAtLeast(50.dp)
     val iconSize = buttonSize / 1.5f
     val spacing = if (isWideScreen) 16.dp else 4.dp
-    val hpTextSize = if (isWideScreen) 110.sp else 65.sp // Адаптивный размер текста HP
+    val hpTextSize = if (isWideScreen) 110.sp else 65.sp
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        // Верхняя часть (картинка и элемент выбора)
         Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = imageResourceId),
@@ -640,27 +657,25 @@ fun PlayerLifeCounter(
                     )
                     .padding(bottom = 8.dp)
                     .animateContentSize(animationSpec = tween(300))
+                    .clickable { onImageClick() }
             )
             AnimatedNumberText(
                 number = lifeTotal.value,
                 backgroundColor = backgroundColor,
                 textSize = hpTextSize,
                 onShowEditDialog = onShowEditDialog,
-                context = context // Pass the context here
+                context = context
             )
 
         }
 
         if (isWideScreen) {
-            // Расположение кнопок внизу для больших экранов.  Используем SpaceBetween
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween // Изменено на SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-
-
                 AnimatedActionButton(
                     onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
                     icon = Icons.Filled.FavoriteBorder,
@@ -668,7 +683,7 @@ fun PlayerLifeCounter(
                     buttonSize = buttonSize,
                     iconSize = iconSize,
                     cornerRadius = 12.dp,
-                    modifier = Modifier.weight(1f) // Добавили weight для больших экранов
+                    modifier = Modifier.weight(1f)
                 )
                 AnimatedActionButton(
                     onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), true) },
@@ -677,19 +692,16 @@ fun PlayerLifeCounter(
                     buttonSize = buttonSize,
                     iconSize = iconSize,
                     cornerRadius = 12.dp,
-                    modifier = Modifier.weight(1f) // Добавили weight для больших экранов
+                    modifier = Modifier.weight(1f)
                 )
-
             }
         } else {
-            // Расположение кнопок по бокам для маленьких экранов
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceAround // Изменено на SpaceAround
+                horizontalArrangement = Arrangement.SpaceAround
             ) {
-
                 AnimatedActionButton(
                     onClick = { onLifeChange(maxOf(0, lifeTotal.value - 1), false) },
                     icon = Icons.Filled.FavoriteBorder,
@@ -697,7 +709,6 @@ fun PlayerLifeCounter(
                     buttonSize = buttonSize,
                     iconSize = iconSize,
                     cornerRadius = 12.dp,
-                    // Убрали modifier = Modifier.weight(1f)
                 )
                 AnimatedActionButton(
                     onClick = { onLifeChange(maxOf(0, lifeTotal.value + 1), false) },
@@ -706,13 +717,11 @@ fun PlayerLifeCounter(
                     buttonSize = buttonSize,
                     iconSize = iconSize,
                     cornerRadius = 12.dp,
-                    // Убрали modifier = Modifier.weight(1f)
                 )
             }
         }
     }
 }
-
 
 @Composable
 fun ImageItem(resourceId: Int, index: Int, onImageSelected: (Int) -> Unit, onDismiss: () -> Unit) {
@@ -839,4 +848,45 @@ fun AnimatedNumberText(
 }
 
 
+@Composable
+fun ImageOptionsMenu(
+    onDismiss: () -> Unit,
+    onGameModeClick: () -> Unit,
+    onAppearanceClick: () -> Unit,
+    rotate:Boolean = false
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(modifier = Modifier.rotate(if (rotate) 180f else 0f)) {
+            Card(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(0.8f),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Настройки Игрока", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = {
+                        onGameModeClick()
+                        onDismiss()
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Режим игры")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        onAppearanceClick()
+                        onDismiss()
+                    },  modifier = Modifier.fillMaxWidth()) {
+                        Text("Оформление")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                        Text("Отмена")
+                    }
+                }
+            }
+        }
+    }
+}
 
