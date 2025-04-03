@@ -3,5 +3,7 @@
     <string name="player_image" />
     <string name="decrease" />
     <string name="increase" />
+    <string name="standard_game_mode_description">Два игрока сражаются друг с другом.</string>
+    <string name="single_game_mode_description">Считать жизни только себя</string>
     <string-array name="image_names" />
 </resources>

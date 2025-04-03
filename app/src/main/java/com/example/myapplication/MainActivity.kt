@@ -28,8 +28,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,7 +68,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.rememberNavController
 import com.example.berserklifecounter.ui.theme.SoundManager
 import com.example.myapplication.ui.theme.MyApplicationTheme
-
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.palette.graphics.Palette
 
 interface OrientationChangeListener {
     fun onPlayer2HpChange(showReverse: Boolean)
@@ -103,7 +109,15 @@ class MainActivity : ComponentActivity(), OrientationChangeListener {
         }
     }
 }
+enum class GameMode {
+    STANDARD,
+    SINGLE,
+}
+
 data class Theme(val name: String, val backgroundIds: List<Int>)
+
+
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
@@ -115,75 +129,74 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
     val player2Life = remember { mutableStateOf(25) }
     val gradientColors = listOf(Color(0xFF333333), Color(0xFF666666))
 
-
     val themes = remember {
         listOf(
             Theme(
-                name = "Стандартная",
+                name = "Местность Коллекция 1.",
                 backgroundIds =  listOf(
-                    R.drawable.stepi_bacgraund,
-                    R.drawable.forest_bacgraund,
-                    R.drawable.natral_bacgraund,
-                    R.drawable.dark_bacgraund,
-                    R.drawable.boloto_backgraund,
-                    R.drawable.gori_bacgraund,
+                    R.drawable.mesnost_stepi_1,
+                    R.drawable.mesnost_forest_1,
+                    R.drawable.mesnost_netral_1,
+                    R.drawable.mesnost_dark_1,
+                    R.drawable.mesnost_bloloto_1,
+                    R.drawable.mesnost_gori_1,
                 )
             ),
             Theme(
-                name = "Темная",
+                name = "Местность Коллекция 2.",
                 backgroundIds = listOf(
-                    R.drawable.dark_bacgraund,
-                    R.drawable.boloto_backgraund,
-                    R.drawable.gori_bacgraund,
-                    R.drawable.stepi_bacgraund,
-                    R.drawable.forest_bacgraund,
-                    R.drawable.natral_bacgraund,
+                    R.drawable.mesnost_stepi_2,
+                    R.drawable.mesnost_forest_2,
+                    R.drawable.mesnost_netral_2,
+                    R.drawable.mesnost_dark_2,
+                    R.drawable.mesnost_bololoto_2,
+                    R.drawable.mesnost_gori_2,
                 )
             ),
             Theme(
-                name = "Природа",
+                name = "Местность Коллекция 3.",
                 backgroundIds =  listOf(
-                    R.drawable.gori_bacgraund,
-                    R.drawable.stepi_bacgraund,
-                    R.drawable.forest_bacgraund,
-                    R.drawable.natral_bacgraund,
-                    R.drawable.dark_bacgraund,
-                    R.drawable.boloto_backgraund
+                    R.drawable.mesnost_stepi_3,
+                    R.drawable.mesnost_forest_3,
+                    R.drawable.mesnost_neteral_3,
+                    R.drawable.mesnost_dark_3,
+                    R.drawable.mesnost_bololoto_3,
+                    R.drawable.mesnost_gori_3,
                 )
             ),
             Theme(
-                name = "Горы",
+                name = "Дамы Коллекция 1.",
                 backgroundIds = listOf(
-                    R.drawable.gori_bacgraund,
-                    R.drawable.dark_bacgraund,
-                    R.drawable.stepi_bacgraund,
-                    R.drawable.forest_bacgraund,
-                    R.drawable.natral_bacgraund,
-                    R.drawable.boloto_backgraund,
+                    R.drawable.dama_stepi_1,
+                    R.drawable.dama_forest_1,
+                    R.drawable.dama_netral_1,
+                    R.drawable.dama_dark_1,
+                    R.drawable.dama_boloto_1,
+                    R.drawable.dama_gori_1,
 
                     )
             ),
             Theme(
-                name = "Пустыня",
+                name = "Дамы Коллекция 2.",
                 backgroundIds = listOf(
-                    R.drawable.stepi_bacgraund,
-                    R.drawable.gori_bacgraund,
-                    R.drawable.forest_bacgraund,
-                    R.drawable.natral_bacgraund,
-                    R.drawable.dark_bacgraund,
-                    R.drawable.boloto_backgraund
+                    R.drawable.dama_stepi_2,
+                    R.drawable.dama_forest_2,
+                    R.drawable.dama_netral_2,
+                    R.drawable.dama_dark_2,
+                    R.drawable.dama_boloto_2,
+                    R.drawable.dama_gori_2,
                 )
             ),
 
             Theme(
-                name = "Океан",
+                name = "Дамы Коллекция 3.",
                 backgroundIds =  listOf(
-                    R.drawable.natral_bacgraund,
-                    R.drawable.gori_bacgraund,
-                    R.drawable.stepi_bacgraund,
-                    R.drawable.forest_bacgraund,
-                    R.drawable.dark_bacgraund,
-                    R.drawable.boloto_backgraund
+                    R.drawable.dama_stepi_3,
+                    R.drawable.dama_forest_3,
+                    R.drawable.dama_netral_3,
+                    R.drawable.dama_dark_3,
+                    R.drawable.dama_boloto_3,
+                    R.drawable.dama_gori_3,
                 )
             ),
         )
@@ -223,6 +236,8 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
     var newHpValue by remember { mutableStateOf("") }
     val listener = remember { orientationChangeListener } // Сохраняем listener в remember
     var showBackgroundThemeDialog by remember { mutableStateOf<Int?>(null) }
+    var gameMode by remember { mutableStateOf(GameMode.STANDARD) } // Состояние режима игры
+    var showGameModeMenu by remember { mutableStateOf(false) }
 
 
     Scaffold(modifier = Modifier.fillMaxSize(), contentColor = Color.White) { innerPadding ->
@@ -250,15 +265,22 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                 if (showImageMenuDialog != null) {
                     ImageOptionsMenu(
                         onDismiss = { showImageMenuDialog = null },
-                        onGameModeClick = {
-                            // TODO: Handle game mode click
-                            Log.d("Menu","Game Mode Clicked")
-                        },
+                        onGameModeClick = { showGameModeMenu = true }, // Открываем GameModeMenu
                         onAppearanceClick = {
                             showBackgroundThemeDialog = showImageMenuDialog
                             Log.d("Menu","Appearance Clicked")
                         },
                         rotate = (showImageMenuDialog == 1)
+                    )
+                }
+                if (showGameModeMenu) {
+                    GameModeMenu(
+                        gameMode = gameMode,
+                        onGameModeClick = { newMode ->
+                            gameMode = newMode
+                            showGameModeMenu = false
+                        },
+                        onDismiss = { showGameModeMenu = false }
                     )
                 }
                 if (showBackgroundThemeDialog != null) {
@@ -276,90 +298,70 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
                         rotate = (showBackgroundThemeDialog == 1)
                     )
                 }
+                when (gameMode) {
+                    GameMode.STANDARD -> {
+                        StandardLayout(
+                            player1Life = player1Life,
+                            player2Life = player2Life,
+                            resetPlayer1 = resetPlayer1,
+                            resetPlayer2 = resetPlayer2,
+                            berserkGold = berserkGold,
+                            berserkBloodRed = berserkBloodRed,
+                            berserkDarkGrey = berserkDarkGrey,
+                            berserkShadow = berserkShadow,
+                            imageResourceIds = imageResourceIds,
+                            backgroundColors = backgroundColors,
+                            context = LocalContext.current,
+                            themes = themes,
+                            selectedBackgroundThemeIndexPlayer1 = selectedBackgroundThemeIndexPlayer1,
+                            selectedBackgroundThemeIndexPlayer2 = selectedBackgroundThemeIndexPlayer2,
+                            gradientColors = gradientColors,
+                            selectedElementPlayer1 = selectedElementPlayer1,
+                            selectedElementPlayer2 = selectedElementPlayer2,
+                            onShowEditDialog = { editingPlayer = it; showEditDialog = true },
+                            onImageMenuClick = {
+                                if(it == null){
+                                    showImagePickerDialog = it
+                                } else{
+                                    showImageMenuDialog = it
+                                }
+                            },
+                            onElementClick = { showImagePickerDialog = it }
+                        )
+                    }
+                    GameMode.SINGLE -> {
+                        SingleLayout(
+                            player1Life = player1Life,
+                            resetPlayer1 = resetPlayer1,
+                            berserkGold = berserkGold,
+                            berserkBloodRed = berserkBloodRed,
+                            berserkDarkGrey = berserkDarkGrey,
+                            berserkShadow = berserkShadow,
+                            imageResourceIds = imageResourceIds,
+                            backgroundColors = backgroundColors,
+                            context = LocalContext.current,
+                            themes = themes,
+                            selectedBackgroundThemeIndexPlayer1 = selectedBackgroundThemeIndexPlayer1,
+                            gradientColors = gradientColors,
+                            selectedElementPlayer1 = selectedElementPlayer1,
+                            onShowEditDialog = { editingPlayer = it; showEditDialog = true },
+                            onImageMenuClick = {
+                                if (it == null) {
+                                    showImagePickerDialog = it
+                                } else {
+                                    showImageMenuDialog = it
+                                }
+                            },
+                            onElementClick = {
+                                showImagePickerDialog = it
+                            }
+                        )
+                    }
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(8.dp)
-                        .border(
-                            width = 2.dp,
-                            color = Color.Black,
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    PlayerLifeCounterCard(
-                        onReset = resetPlayer2,
-                        lifeTotal = player2Life,
-                        berserkGold,
-                        berserkBloodRed,
-                        berserkDarkGrey,
-                        berserkShadow,
-                        imageResourceIds,
-                        backgroundColors,
-                        maxLife = 100,
-                        context = LocalContext.current,
-                        backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer2].backgroundIds,
-                        onLifeChange = { newValue, increased -> player2Life.value = newValue },
-                        rotate = true,
-                        backgroundImageIndex = selectedElementPlayer2,
-                        gradientColors = gradientColors,
-                        onShowEditDialog = { editingPlayer = 1; showEditDialog = true },
-                        onImageMenuClick = {
-                            if(it == null){
-                                showImagePickerDialog = 1
-                            } else{
-                                showImageMenuDialog = it
-                            }
-                        }
-                    )
-                }
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(8.dp)
-                        .border(
-                            width = 2.dp,
-                            color = Color.Black,
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    PlayerLifeCounterCard(
-                        onReset = resetPlayer1,
-                        lifeTotal = player1Life,
-                        berserkGold,
-                        berserkBloodRed,
-                        berserkDarkGrey,
-                        berserkShadow,
-                        imageResourceIds,
-                        backgroundColors,
-                        maxLife = 100,
-                        context = LocalContext.current,
-                        backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer1].backgroundIds,
-                        onLifeChange = { newValue, increased -> player1Life.value = newValue },
-                        gradientColors = gradientColors,
-                        backgroundImageIndex = selectedElementPlayer1,
-                        onShowEditDialog = {
-                            editingPlayer = 0; showEditDialog = true
-                        },
-                        onImageMenuClick = {
-                            if(it == null){
-                                showImagePickerDialog = 0
-                            } else{
-                                showImageMenuDialog = it
-                            }
-                        }
-                    )
                 }
             }
         }
     }
-
     LaunchedEffect(showEditDialog, editingPlayer) {
         if (orientationChangeListener != null) {
             orientationChangeListener.onPlayer2HpChange(showEditDialog && editingPlayer == 1)
@@ -407,14 +409,396 @@ fun LifeCounterApp(orientationChangeListener: OrientationChangeListener?) {
 }
 
 
+@Composable
+fun GameModeMenu(
+    gameMode: GameMode,
+    onGameModeClick: (GameMode) -> Unit,
+    onDismiss: () -> Unit,
+    rotate: Boolean = false
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Выберите Режим Игры",
+                    style = MaterialTheme.typography.headlineSmall,
+                    textAlign = TextAlign.Center
+                )
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+
+                GameMode.values().forEach { mode ->
+                    GameModeItem(
+                        mode = mode,
+                        selected = mode == gameMode,
+                        onClick = {
+                            onGameModeClick(mode)
+                            onDismiss()
+                        }
+                    )
+                    if (mode != GameMode.values().last()) {
+                        Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f))
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                ) {
+                    Text("Закрыть", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GameModeItem(mode: GameMode, selected: Boolean, onClick: () -> Unit) {
+    val context = LocalContext.current // Получаем контекст
+
+    ElevatedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        elevation = ButtonDefaults.elevatedButtonElevation(defaultElevation = 6.dp),
+        colors = if (selected) {
+            ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        } else {
+            ButtonDefaults.buttonColors()
+        }
+
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Получите Description для режима игры, используя stringResource
+            val description = when (mode) {
+                GameMode.STANDARD -> stringResource(R.string.standard_game_mode_description)
+                GameMode.SINGLE -> stringResource(R.string.single_game_mode_description)
+            }
+            // Иконка для режима игры
+            val icon = when (mode) {
+                GameMode.STANDARD -> painterResource(id = R.drawable.number_2_3830) // Замените на свою иконку
+                GameMode.SINGLE -> painterResource(id = R.drawable.number_1_3080) // Замените на свою иконку
+            }
+            Icon(painter = icon, contentDescription = null)
+            Column(horizontalAlignment = Alignment.Start) {
+                Text(
+                    text = when (mode) {
+                        GameMode.STANDARD -> "Стандартный Режим"
+                        GameMode.SINGLE -> "Режим Одиночной Игры"
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+
+
+            AnimatedVisibility(
+                visible = selected,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Выбрано",
+                    tint = Color.White
+                )
+            }
+        }
+    }
+}
 
 
 
-// ElementSelectionButton (изменено)
+
+
+
+@Composable
+fun StandardLayout(
+    player1Life: MutableState<Int>,
+    player2Life: MutableState<Int>,
+    resetPlayer1: () -> Unit,
+    resetPlayer2: () -> Unit,
+    berserkGold: Color,
+    berserkBloodRed: Color,
+    berserkDarkGrey: Color,
+    berserkShadow: Color,
+    imageResourceIds: List<Int>,
+    backgroundColors: List<Color>,
+    context: Context,
+    themes: List<Theme>,
+    selectedBackgroundThemeIndexPlayer1: Int,
+    selectedBackgroundThemeIndexPlayer2: Int,
+    gradientColors: List<Color>,
+    selectedElementPlayer1: Int,
+    selectedElementPlayer2: Int,
+    onShowEditDialog: (Int) -> Unit,
+    onImageMenuClick: (Int?) -> Unit,
+    onElementClick: (Int?) -> Unit // Новый параметр
+) {
+    Column(modifier = Modifier.fillMaxSize()) {  // Добавление Column
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(8.dp)
+                .border(
+                    width = 2.dp,
+                    color = Color.Black,
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            PlayerLifeCounterCard(
+                onReset = resetPlayer2,
+                lifeTotal = player2Life,
+                berserkGold,
+                berserkBloodRed,
+                berserkDarkGrey,
+                berserkShadow,
+                imageResourceIds,
+                backgroundColors,
+                maxLife = 100,
+                context = context,
+                backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer2].backgroundIds,
+                onLifeChange = { newValue, increased -> player2Life.value = newValue },
+                rotate = true,
+                backgroundImageIndex = selectedElementPlayer2,
+                gradientColors = gradientColors,
+                onShowEditDialog = { onShowEditDialog(1) },
+                onImageMenuClick = onImageMenuClick,
+                onElementClick = onElementClick
+            )
+        }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(8.dp)
+                .border(
+                    width = 2.dp,
+                    color = Color.Black,
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            PlayerLifeCounterCard(
+                onReset = resetPlayer1,
+                lifeTotal = player1Life,
+                berserkGold,
+                berserkBloodRed,
+                berserkDarkGrey,
+                berserkShadow,
+                imageResourceIds,
+                backgroundColors,
+                maxLife = 100,
+                context = context,
+                backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer1].backgroundIds,
+                onLifeChange = { newValue, increased -> player1Life.value = newValue },
+                gradientColors = gradientColors,
+                backgroundImageIndex = selectedElementPlayer1,
+                onShowEditDialog = { onShowEditDialog(0) },
+                onImageMenuClick = onImageMenuClick,
+                onElementClick = onElementClick
+            )
+        }
+    }
+}
+
+@Composable
+fun SingleLayout(
+    player1Life: MutableState<Int>,
+    resetPlayer1: () -> Unit,
+    berserkGold: Color,
+    berserkBloodRed: Color,
+    berserkDarkGrey: Color,
+    berserkShadow: Color,
+    imageResourceIds: List<Int>,
+    backgroundColors: List<Color>,
+    context: Context,
+    themes: List<Theme>,
+    selectedBackgroundThemeIndexPlayer1: Int,
+    gradientColors: List<Color>,
+    selectedElementPlayer1: Int,
+    onShowEditDialog: (Int) -> Unit,
+    onImageMenuClick: (Int?) -> Unit,
+    onElementClick: (Int?) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) { // Обёртка в Column
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp)
+                .border(
+                    width = 2.dp,
+                    color = Color.Black,
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            PlayerLifeCounterCard(
+                onReset = resetPlayer1,
+                lifeTotal = player1Life,
+                berserkGold,
+                berserkBloodRed,
+                berserkDarkGrey,
+                berserkShadow,
+                imageResourceIds,
+                backgroundColors,
+                maxLife = 100,
+                context = context,
+                backgroundImageIds = themes[selectedBackgroundThemeIndexPlayer1].backgroundIds,
+                onLifeChange = { newValue, increased -> player1Life.value = newValue },
+                gradientColors = gradientColors,
+                backgroundImageIndex = selectedElementPlayer1,
+                onShowEditDialog = { onShowEditDialog(0) },
+                onImageMenuClick = onImageMenuClick,
+                onElementClick = onElementClick
+            )
+        }
+    }
+}
+
+@Composable
+fun GeneralLayout(
+    player1Life: MutableState<Int>,
+    player2Life: MutableState<Int>,
+    resetPlayer1: () -> Unit,
+    resetPlayer2: () -> Unit,
+    berserkGold: Color,
+    berserkBloodRed: Color,
+    berserkDarkGrey: Color,
+    berserkShadow: Color,
+    imageResourceIds: List<Int>,
+    backgroundColors: List<Color>,
+    context: Context,
+    themes: List<Theme>,
+    selectedBackgroundThemeIndexPlayer1: Int,
+    selectedBackgroundThemeIndexPlayer2: Int,
+    gradientColors: List<Color>,
+    selectedElementPlayer1: Int,
+    selectedElementPlayer2: Int,
+    onShowEditDialog: (Int) -> Unit,
+    onImageMenuClick: (Int?) -> Unit,
+    onElementClick: (Int?) -> Unit
+) {
+    val playerLifeList = remember {
+        mutableStateListOf<MutableState<Int>>(  // Явно указываем тип
+            player1Life,
+            player2Life,
+            mutableStateOf(25), // Используем mutableStateOf здесь
+            mutableStateOf(25),
+            mutableStateOf(25),
+            mutableStateOf(25)
+        )
+    }
+    val resetFunctions = remember {
+        listOf(
+            resetPlayer1,
+            resetPlayer2,
+            { playerLifeList[2].value = 25 },
+            { playerLifeList[3].value = 25 },
+            { playerLifeList[4].value = 25 },
+            { playerLifeList[5].value = 25 }
+        )
+    }
+    val selectedBackgroundThemeIndexes = remember {
+        mutableStateListOf(
+            selectedBackgroundThemeIndexPlayer1,
+            selectedBackgroundThemeIndexPlayer2,
+            0,
+            0,
+            0,
+            0,
+        )
+    }
+
+    val selectedElementIndexes = remember {
+        mutableStateListOf(
+            selectedElementPlayer1,
+            selectedElementPlayer2,
+            0,
+            0,
+            0,
+            0,
+        )
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        itemsIndexed(playerLifeList) { index, playerLife ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+                    .border(
+                        width = 1.dp,
+                        color = Color.Black,
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                PlayerLifeCounterCard(
+                    onReset = resetFunctions[index],
+                    lifeTotal = playerLife,
+                    berserkGold = berserkGold,
+                    berserkBloodRed = berserkBloodRed,
+                    berserkDarkGrey = berserkDarkGrey,
+                    berserkShadow = berserkShadow,
+                    imageResourceIds = imageResourceIds,
+                    backgroundColors = backgroundColors,
+                    maxLife = 100,
+                    context = context,
+                    backgroundImageIds = themes[selectedBackgroundThemeIndexes[index]].backgroundIds,
+                    onLifeChange = { newValue, increased -> playerLife.value = newValue },
+                    gradientColors = gradientColors,
+                    backgroundImageIndex = selectedElementIndexes[index],
+                    onShowEditDialog = { onShowEditDialog(index) },
+                    onImageMenuClick = onImageMenuClick,
+                    onElementClick = onElementClick
+                )
+            }
+        }
+    }
+}
+
+
+
+
+
+
 @Composable
 fun ElementSelectionButton(
     modifier: Modifier = Modifier,
-    onClick: (Int?) -> Unit,
+    onClick: () -> Unit,
     context: Context
 ) {
     val soundManager = remember { SoundManager(context) }
@@ -427,7 +811,7 @@ fun ElementSelectionButton(
     )
     IconButton(
         onClick = {
-            onClick(null) // Передаем null чтобы открыть диалог
+            onClick() // Передаем null чтобы открыть диалог
             soundManager.playSound(SoundManager.SoundType.Menu)
         },
         modifier = modifier
@@ -444,6 +828,8 @@ fun ElementSelectionButton(
         )
     }
 }
+
+
 
 
 
@@ -525,11 +911,11 @@ fun EditHpDialog(
     initialHp: Int,
     onDismiss: () -> Unit,
     playerNumber: Int,
-    onRotationChange: (Float) -> Unit,
-    showInitialValue: Boolean = false
+    onRotationChange: (Float) -> Unit
+    // removed showInitialValue: Boolean = false
 ) {
-    var hpValue by remember(initialHp, showInitialValue) {
-        mutableStateOf(if (showInitialValue) initialHp.toString() else "")
+    var hpValue by remember(initialHp) { // Используем initialHp как ключ для remember
+        mutableStateOf(initialHp.toString()) // Инициализируем с текущим HP
     }
     var showError by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -599,6 +985,7 @@ fun EditHpDialog(
     }
 }
 
+
 @Composable
 fun PlayerLifeCounterCard(
     onReset: () -> Unit,
@@ -618,16 +1005,19 @@ fun PlayerLifeCounterCard(
     backgroundImageIndex: Int,
     onShowEditDialog: () -> Unit,
     onImageMenuClick: (Int?) -> Unit,
+    onElementClick: (Int?) -> Unit // Новый параметр
 ) {
     val soundManager = remember { SoundManager(context) }
     DisposableEffect(Unit) {
         onDispose { soundManager.release() }
     }
+    val backgroundImageIndexState = rememberUpdatedState(newValue = backgroundImageIndex)
+
     val backgroundColor =
-        remember(backgroundImageIndex) { backgroundColors[backgroundImageIndex % backgroundColors.size] }
+        remember(backgroundImageIndexState.value) { backgroundColors[backgroundImageIndexState.value % backgroundColors.size] }
     val imageResourceId =
-        remember(backgroundImageIndex) { imageResourceIds[backgroundImageIndex % imageResourceIds.size] }
-    val backgroundImageId = backgroundImageIds[backgroundImageIndex % backgroundImageIds.size]
+        remember(backgroundImageIndexState.value) { imageResourceIds[backgroundImageIndexState.value % imageResourceIds.size] }
+    val backgroundImageId = backgroundImageIds[backgroundImageIndexState.value % backgroundImageIds.size]
 
 
     AnimatedVisibility(
@@ -661,13 +1051,12 @@ fun PlayerLifeCounterCard(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxSize()
-                        .clickable { onImageMenuClick(if (rotate) 1 else 0) } // Открытие меню по клику на Image
+                        .clickable { onImageMenuClick(if (rotate) 1 else 0) }
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(19.dp),
+                Row(                    modifier = Modifier
+                    .fillMaxSize()
+                    .padding(19.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.padding(13.dp)) {
@@ -680,8 +1069,10 @@ fun PlayerLifeCounterCard(
                     Column(modifier = Modifier.padding(5.dp)) {
                         ElementSelectionButton(
                             modifier = Modifier.padding(7.dp),
-                            onClick = { onImageMenuClick(it) },
-                            context = context
+                            onClick = {
+                                onElementClick(if(rotate) 1 else 0) // Передаем индекс игрока
+                            },
+                            context = context,
                         )
                     }
                 }
@@ -691,7 +1082,7 @@ fun PlayerLifeCounterCard(
                     maxLife = maxLife,
                     imageResourceId = imageResourceId,
                     backgroundColor = backgroundColor,
-                    backgroundImageIndex = backgroundImageIndex,
+                    backgroundImageIndex = backgroundImageIndexState.value,
                     context = context,
                     onShowEditDialog = onShowEditDialog,
                     onLifeChange = { newValue, increased ->
@@ -709,6 +1100,10 @@ fun PlayerLifeCounterCard(
         }
     }
 }
+
+
+
+
 
 @Composable
 fun PlayerLifeCounter(
@@ -919,7 +1314,7 @@ fun AnimatedNumberText(
                     }
                 }
                 .background(
-                    color = textColor.copy(alpha = 0.2f),
+                    color = Color.Black.copy(alpha = 0.7f), // Затемняем фон здесь
                     shape = RoundedCornerShape(8.dp)
                 )
                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -945,42 +1340,89 @@ fun ImageOptionsMenu(
     onDismiss: () -> Unit,
     onGameModeClick: () -> Unit,
     onAppearanceClick: () -> Unit,
-    rotate:Boolean = false
+    rotate: Boolean = false
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Box(modifier = Modifier.rotate(if (rotate) 180f else 0f)) {
-            Card(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(0.8f),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Настройки Игрока", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = {
-                        onGameModeClick()
-                        onDismiss()
-                    }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Режим игры")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = {
-                        onAppearanceClick()
-                        // onDismiss()
-                    },  modifier = Modifier.fillMaxWidth()) {
-                        Text("Оформление")
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                        Text("Отмена")
-                    }
+                Text(
+                    text = "Настройки Игры",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+
+                MenuItem(
+                    text = "Выбор Режима",
+                    description = "Изменить режим игры",
+                    icon = Icons.Filled.Settings, // Замените на более подходящую иконку
+                    onClick = onGameModeClick
+                )
+
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+
+                MenuItem(
+                    text = "Настройка Внешнего Вида",
+                    description = "Изменить внешний вид игры",
+                    icon = Icons.Filled.Person, // Замените на более подходящую иконку
+                    onClick = onAppearanceClick
+                )
+
+                Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Закрыть")
                 }
             }
         }
     }
 }
+
+@Composable
+fun MenuItem(text: String, description: String, icon: ImageVector, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(end = 16.dp)
+        )
+        Column {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
 
 
 @Composable
@@ -1030,7 +1472,6 @@ fun BackgroundThemeSelectionDialog(
     }
 }
 
-// BackgroundThemeSetItem (изменено)
 @Composable
 fun BackgroundThemeSetItem(theme: Theme, onClick: () -> Unit) {
     Card(
@@ -1038,18 +1479,35 @@ fun BackgroundThemeSetItem(theme: Theme, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(8.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(12.dp), // Скругленные углы
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Тень
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = theme.name,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.titleMedium
+                modifier = Modifier.padding(top = 8.dp),
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                theme.backgroundIds.take(3).forEach { imageId -> // Отображаем до 3х превью
+                    Image(
+                        painter = painterResource(id = imageId),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
